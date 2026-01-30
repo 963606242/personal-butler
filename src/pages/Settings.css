@@ -1,0 +1,133 @@
+/* API 说明弹窗内 Markdown 样式 */
+.api-doc-markdown {
+  max-height: 520px;
+  overflow-y: auto;
+  padding: 4px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.api-doc-markdown .api-doc-placeholder {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+[data-theme='dark'] .api-doc-markdown .api-doc-placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* 标题 */
+.api-doc-markdown h1 {
+  font-size: 1.35em;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.api-doc-markdown h2 {
+  font-size: 1.15em;
+  font-weight: 600;
+  margin: 20px 0 10px 0;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.api-doc-markdown h3 {
+  font-size: 1.05em;
+  font-weight: 600;
+  margin: 16px 0 8px 0;
+  color: rgba(0, 0, 0, 0.75);
+}
+
+[data-theme='dark'] .api-doc-markdown h1 {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme='dark'] .api-doc-markdown h2 {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+[data-theme='dark'] .api-doc-markdown h3 {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* 段落 */
+.api-doc-markdown p {
+  margin: 0 0 10px 0;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme='dark'] .api-doc-markdown p {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* 列表 */
+.api-doc-markdown ul {
+  margin: 0 0 12px 0;
+  padding-left: 22px;
+}
+
+.api-doc-markdown li {
+  margin-bottom: 6px;
+}
+
+.api-doc-markdown li p {
+  margin: 0;
+}
+
+/* 行内代码（先定义，被 pre code 覆盖） */
+.api-doc-markdown code {
+  font-family: 'SF Mono', 'Monaco', 'Consolas', 'Menlo', monospace;
+  font-size: 0.9em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.06);
+  color: #c41d7f;
+}
+
+[data-theme='dark'] .api-doc-markdown code {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e879f9;
+}
+
+/* 代码块 */
+.api-doc-markdown pre {
+  margin: 12px 0;
+  padding: 14px 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.5;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.api-doc-markdown pre code {
+  padding: 0;
+  background: none;
+  color: rgba(0, 0, 0, 0.85);
+  font-size: inherit;
+}
+
+[data-theme='dark'] .api-doc-markdown pre {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .api-doc-markdown pre code {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* 加粗（如 **GET**） */
+.api-doc-markdown strong {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.88);
+}
+
+[data-theme='dark'] .api-doc-markdown strong {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+/* 最后一个元素底部留白 */
+.api-doc-markdown > *:last-child {
+  margin-bottom: 0;
+}

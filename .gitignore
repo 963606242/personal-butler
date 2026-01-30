@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-electron/
+build/
+*.tsbuildinfo
+
+# Environment (do not commit secrets; .env.example is committed as template)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE / Editor
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local database (runtime; do not commit)
+*.db
+*.sqlite
+*.sqlite3
+
+# User data directory (local)
+user-data/

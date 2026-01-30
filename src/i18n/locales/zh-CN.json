@@ -1,0 +1,443 @@
+{
+  "common": {
+    "appName": "Personal Butler",
+    "appNameFull": "个人管家",
+    "loadingInitializing": "正在初始化...",
+    "loadingData": "正在加载数据...",
+    "cancel": "取消"
+  },
+  "layout": {
+    "header": {
+      "title": "个人管家"
+    },
+    "sidebar": {
+      "titleShort": "PB",
+      "groups": {
+        "overview": "概览",
+        "planHabits": "计划与习惯",
+        "itemsOutfits": "物品与搭配",
+        "newsAssistant": "资讯与助手",
+        "fun": "趣味",
+        "system": "系统"
+      },
+      "menu": {
+        "dashboard": "仪表盘",
+        "profile": "个人信息",
+        "schedule": "日程管理",
+        "habits": "习惯追踪",
+        "countdown": "倒数纪念日",
+        "equipment": "装备管理",
+        "clothing": "服装管理",
+        "weather": "天气与搭配",
+        "news": "新闻资讯",
+        "ai": "AI助手",
+        "fun": "趣味工具",
+        "settings": "设置"
+      }
+    }
+  },
+  "fun": {
+    "pageTitle": "趣味工具",
+    "pageDesc": "亲戚计算器、抽签解签、掷骰子、抛硬币、随机一句，轻量娱乐",
+    "tabs": {
+      "relationship": "亲戚计算器",
+      "lottery": "抽签解签",
+      "dice": "掷骰子",
+      "coin": "抛硬币",
+      "quote": "随机一句"
+    },
+    "relationship": {
+      "title": "关系链 → 称谓",
+      "desc": "输入亲戚关系链，如：爸爸的妈妈、妈妈的哥哥的老婆",
+      "placeholder": "例如：爸爸的妈妈",
+      "query": "查询",
+      "reverse": "对方称呼我",
+      "sexMale": "本人男",
+      "sexFemale": "本人女",
+      "sexUnknown": "未知",
+      "result": "称谓",
+      "noResult": "未找到对应称谓，可换一种说法试试",
+      "inputHint": "请输入关系链，如：爸爸的妈妈"
+    },
+    "checkin": {
+      "title": "今日运势（娱乐向）",
+      "desc": "签到后获得今日宜忌与运势分数，纯娱乐不记录数据库",
+      "button": "今日签到",
+      "done": "签到成功～",
+      "score": "今日运势",
+      "scoreUnit": "分",
+      "yi": "今日宜",
+      "ji": "今日不宜"
+    },
+    "lottery": {
+      "title": "抽一签（娱乐向）",
+      "desc": "随机抽一签，看看签文与解签，仅供娱乐",
+      "button": "抽签",
+      "drew": "已抽签～",
+      "no": "签号",
+      "hint": "解签"
+    },
+    "dice": {
+      "title": "掷骰子",
+      "desc": "点一下，掷出 1～6，纯娱乐",
+      "button": "掷一次",
+      "result": "点数"
+    },
+    "coin": {
+      "title": "抛硬币",
+      "desc": "正面还是反面？交给命运吧",
+      "button": "抛一次",
+      "heads": "正面",
+      "tails": "反面"
+    },
+    "quote": {
+      "title": "随机一句",
+      "desc": "毒鸡汤 / 鸡汤 / 搞笑，来一句",
+      "button": "来一句",
+      "drew": "今日份～"
+    }
+  },
+  "dashboard": {
+    "quickEntry": "快速入口",
+    "habitProgress": "习惯完成进度",
+    "viewAllHabits": "查看全部习惯 →",
+    "tip": "提示",
+    "tipDesc1": "点击卡片或按钮可快速跳转到对应功能页面。",
+    "tipDesc2": "当前时段推荐会根据时间自动更新。",
+    "funTools": "趣味工具",
+    "greeting": {
+      "hello": "你好",
+      "morning": "早上好",
+      "forenoon": "上午好",
+      "noon": "中午好",
+      "afternoon": "下午好",
+      "evening": "晚上好",
+      "night": "夜深了"
+    },
+    "greetingTitle": { "sir": "先生", "madam": "女士" },
+    "weekendTag": "周末愉快",
+    "birthdayTitle": "生日快乐！",
+    "birthdayDesc": "今天是您的生日，祝您生日快乐，心想事成～",
+    "assistantSuggestion": "{{name}} 建议",
+    "getSuggestion": "获取今日建议",
+    "getSuggestionFailed": "获取建议失败",
+    "goSetupAi": "先去设置 AI",
+    "suggestionPlaceholder": "点击「获取今日建议」可生成当日金句、日程提醒、习惯打卡与天气穿搭建议。将根据你的个人信息、日程、习惯、天气及服装搭配（如有）智能生成。",
+    "weather": "天气",
+    "detail": "详情",
+    "feelsLike": "体感",
+    "humidity": "湿度",
+    "windSpeed": "风速",
+    "periodRecommend": "当前时段推荐",
+    "streakDays": "连续 {{n}} 天，继续保持～",
+    "viewAll": "查看全部",
+    "goCheckIn": "去打卡",
+    "streakDaysShort": "连续 {{n}} 天",
+    "todayMorningReport": "今日早报",
+    "todayEveningReport": "今日晚报",
+    "todaySchedule": "今日日程",
+    "allDay": "全天",
+    "noTitle": "无标题",
+    "habitTotal": "习惯总数",
+    "recent7Rate": "近7天完成率",
+    "longestStreak": "最长连续",
+    "day": "天",
+    "welcomeMessage": "欢迎使用个人管家～ 先完善个人信息或添加第一个习惯吧",
+    "newsCategory": {
+      "general": "综合",
+      "technology": "科技",
+      "business": "商业",
+      "entertainment": "娱乐",
+      "sports": "体育",
+      "science": "科学",
+      "health": "健康"
+    },
+    "periodLabel": {
+      "dawn": "早晨",
+      "morning": "上午",
+      "noon": "中午",
+      "afternoon": "下午",
+      "dusk": "傍晚",
+      "evening": "晚上",
+      "night": "睡前"
+    },
+    "checkin": {
+      "title": "今日签到",
+      "button": "今日签到",
+      "score": "运势",
+      "scoreUnit": "分",
+      "yi": "宜",
+      "ji": "忌",
+      "done": "签到成功～"
+    },
+    "quickActions": "快捷执行",
+    "batchCheckIn": "当前时段习惯一键打卡",
+    "addSchedule": "添加日程",
+    "batchCheckInConfirm": "确认为以下习惯打卡今日？",
+    "batchCheckInOk": "确认打卡",
+    "batchCheckInDone": "已为 {{n}} 个习惯打卡",
+    "batchCheckInEmpty": "当前时段没有待打卡习惯"
+  },
+  "settings": {
+    "title": "设置",
+    "newbieGuide": "新手教程",
+    "configPriorityTitle": "配置优先于 .env",
+    "configPriorityDesc": "以下内容保存到本地，优先于环境变量。修改后无需重启。",
+    "appearance": {
+      "sectionTitle": "外观",
+      "themeLabel": "主题",
+      "themeOptions": {
+        "light": "浅色模式",
+        "dark": "深色模式",
+        "system": "跟随系统"
+      },
+      "languageLabel": "语言",
+      "languageOptions": {
+        "zhCN": "简体中文",
+        "enUS": "English"
+      }
+    },
+    "messages": {
+      "saveSuccess": "设置已保存",
+      "saveFailed": "保存失败",
+      "themeSwitched": "主题已切换",
+      "themeSaveFailed": "保存主题失败",
+      "languageSwitched": "语言已切换",
+      "languageSaveFailed": "保存语言失败",
+      "loginFirst": "请先登录",
+      "resetSuccess": "已重置 {{count}} 类数据",
+      "resetFailed": "重置失败"
+    },
+    "sections": {
+      "apikeys": "API Keys",
+      "configuredCount": "已配置 {{n}} / {{total}}",
+      "configured": "已配置",
+      "notConfigured": "未配置",
+      "configNote": "配置说明",
+      "configNoteDesc": "以下 Key 保存到本地，优先于 .env。修改后无需重启。获取 Key 后请到对应控制台配置；天聚数行需单独申请「国内新闻」「分类新闻」接口权限。",
+      "saveApiKeys": "保存 API Keys",
+      "aiAssistant": "AI 助手",
+      "assistantName": "管家名称",
+      "assistantNameExtra": "如贾维斯、小爱同学等，留空则使用默认「AI 管家」",
+      "assistantNamePlaceholder": "贾维斯、小爱同学…",
+      "provider": "提供商",
+      "ollamaUrl": "Ollama 地址",
+      "ollamaUrlExtra": "默认 http://localhost:11434",
+      "ollamaModel": "模型",
+      "ollamaModelExtra": "如 llama3.2、qwen2.5",
+      "apiUrlOptional": "API 地址（可选）",
+      "apiUrlOpenaiExtra": "留空为 OpenAI 官方。Xiaomi MiMo 等兼容服务填 base_url，如 https://api.xiaomimimo.com/v1",
+      "apiKey": "API Key",
+      "requiredPlaceholder": "请填写",
+      "modelOpenaiExtra": "OpenAI: gpt-4o-mini；MiMo: mimo-v2-flash",
+      "apiUrlAnthropicExtra": "留空为 Anthropic 官方；兼容服务可填自定义 base_url",
+      "modelAnthropicExtra": "如 claude-3-5-haiku、claude-3-5-sonnet",
+      "saveAiConfig": "保存 AI 配置",
+      "dataReset": "数据与重置",
+      "dataResetTitle": "数据重置",
+      "dataResetDesc": "重置将永久删除当前账号下的：日程、习惯与打卡、倒数纪念日、装备、服装与搭配、AI 聊天记录、天气与新闻缓存等。",
+      "dataResetDesc2": "不会删除：账号、个人资料、本页的设置（API Keys、主题等）。",
+      "dataResetButton": "数据重置",
+      "databasePath": "数据库文件位置",
+      "databasePathExtra": "备份或外部查看时可复制此路径；详见 docs/data-storage.md",
+      "applyInConsole": "需在控制台申请：",
+      "requireApiTag": "需申请接口",
+      "apiBridge": "AI 调用本应用",
+      "apiBridgeDesc": "开启后，本应用会在本机启动一个 HTTP API（仅 localhost），供外部 AI、脚本或插件读取/写入习惯、日程、倒数等数据。",
+      "apiBridgeEnable": "启用 API",
+      "apiBridgePort": "端口",
+      "apiBridgePortExtra": "默认 3847，仅监听 127.0.0.1",
+      "apiBridgeSecret": "API Key（可选）",
+      "apiBridgeSecretExtra": "留空则不校验；设置后请求头需带 X-API-Key",
+      "apiBridgeSave": "保存并重启 API",
+      "apiBridgeSaveSuccess": "已保存，API 已重启",
+      "apiBridgeGenerate": "生成",
+      "apiBridgeDoc": "API 说明",
+      "dailyReminder": "每日提醒",
+      "dailyReminderDesc": "到点后在本机弹出系统通知，展示今日摘要（需已开启「AI 调用本应用」）",
+      "dailyReminderTime": "提醒时间",
+      "dailyReminderEnabled": "启用每日提醒"
+    },
+    "modal": {
+      "resetTitle": "确认数据重置",
+      "resetOk": "确认重置",
+      "resetCancel": "取消",
+      "resetContent1": "即将清除当前账号下的全部应用数据（日程、习惯、倒数纪念日、装备、服装、AI 聊天、缓存等），此操作不可恢复。",
+      "resetContent2": "是否继续？"
+    }
+  },
+  "friendlyEmpty": {
+    "habits": {
+      "description": "还没有习惯呢，去创建第一个吧 ~",
+      "action": "新建习惯"
+    },
+    "schedule": {
+      "description": "今日暂无安排，好好享受自由时光",
+      "action": "添加日程"
+    },
+    "schedulePeriod": {
+      "description": "当前时段暂无待完成的习惯，休息一下也不错",
+      "action": "看看习惯"
+    },
+    "countdown": {
+      "description": "还没有倒数或纪念日，点击「新建」添加一个吧",
+      "action": "新建"
+    },
+    "equipment": {
+      "description": "还没有装备记录，添加你的第一件装备吧",
+      "action": "添加装备"
+    },
+    "clothing": {
+      "description": "还没有服装数据，先添加几件常穿的～",
+      "action": "添加服装"
+    },
+    "outfits": {
+      "description": "还没有搭配记录，试试搭配一套吧～",
+      "action": "新建搭配"
+    },
+    "news": {
+      "description": "暂无新闻数据，稍后再来看看"
+    },
+    "newsSearch": {
+      "description": "输入关键词搜索一下"
+    },
+    "habitsStats": {
+      "description": "该周期暂无打卡数据，完成习惯后这里会有记录～"
+    },
+    "equipmentNoResult": {
+      "description": "没有找到匹配的装备，试试其他关键词吧"
+    },
+    "outfitsNoRecommend": {
+      "description": "暂无推荐搭配，先添加一些服装和搭配吧～"
+    },
+    "outfitsLink": {
+      "description": "搭配管理在「搭配」页，去看看吧～",
+      "action": "前往搭配管理"
+    },
+    "generic": {
+      "description": "这里还没有内容，去别处逛逛吧"
+    }
+  },
+  "habits": {
+    "title": "习惯追踪",
+    "chart": {
+      "completed": "已完成",
+      "uncompleted": "未完成"
+    },
+    "actions": {
+      "askAI": "问 AI",
+      "newHabit": "新建习惯"
+    },
+    "loadingInitializing": "正在初始化...",
+    "statsRangeLabel": "统计范围：",
+    "statsRange7": "近 7 天",
+    "statsRange30": "近 30 天",
+    "tabs": {
+      "habits": "习惯与打卡",
+      "reports": "统计与报表"
+    },
+    "frequency": {
+      "daily": "每天",
+      "weekdays": "工作日",
+      "weekends": "周末",
+      "weekly": "每周"
+    },
+    "messages": {
+      "created": "习惯已创建",
+      "updated": "习惯已更新",
+      "saveFailed": "保存失败：",
+      "saveUnknownError": "未知错误",
+      "deleteConfirm": "确定删除该习惯？其打卡记录将一并删除。",
+      "deleteOk": "删除",
+      "deleteCancel": "取消",
+      "deleted": "已删除习惯",
+      "deleteFailed": "删除失败",
+      "checkIn": "已打卡",
+      "uncheck": "已取消打卡",
+      "checkFailed": "打卡失败",
+      "operationFailed": "操作失败"
+    },
+    "todayCheck": {
+      "tooltipTargetToday": "今日打卡",
+      "tooltipCancel": "取消打卡",
+      "tooltipNonTarget": "今日非目标日",
+      "label": "今日已打卡"
+    },
+    "cards": {
+      "streakTitle": "连续",
+      "streakSuffix": "天",
+      "recentStatsTitlePrefix": "近",
+      "recentStatsTitleSuffix": "天",
+      "reminderPrefix": "提醒 "
+    },
+    "table": {
+      "recentWeekTitle": "最近一周打卡",
+      "habitColumn": "习惯",
+      "todayColumn": "今天"
+    },
+    "reports": {
+      "week": "周报",
+      "month": "月报",
+      "year": "年报",
+      "currentWeek": "本周",
+      "lastWeek": "上周",
+      "currentMonth": "本月",
+      "lastMonth": "上月",
+      "currentYear": "今年",
+      "lastYear": "去年",
+      "byPeriodTitle": "完成占比（按时段）",
+      "byHabitTitle": "完成占比（按习惯）",
+      "dailyCompletionTitle": "每日完成情况",
+      "reportTitleWeek": "习惯周报",
+      "reportTitleMonth": "习惯月报",
+      "reportTitleYear": "习惯年报",
+      "completionRate": "完成率",
+      "summary": "目标 {{totalTarget}} 次，完成 {{totalCompleted}} 次",
+      "habitDetailPrefix": "各习惯明细",
+      "scopeWeek": "周报",
+      "scopeMonth": "月报",
+      "scopeYear": "年报",
+      "scopeRange": "范围：{{start}} 至 {{end}}"
+    }
+  },
+  "schedule": {
+    "title": "日程管理",
+    "listView": "列表视图",
+    "calendarView": "日历视图",
+    "calendarConfig": "日历配置",
+    "analysis": "日程分析"
+  },
+  "countdown": {
+    "title": "倒数纪念日",
+    "new": "新建",
+    "loading": "正在加载...",
+    "updated": "已更新",
+    "created": "已添加",
+    "saveFailed": "保存失败",
+    "deleted": "已删除",
+    "deleteFailed": "删除失败",
+    "colTitle": "标题",
+    "colType": "类别",
+    "colTargetDate": "目标日期",
+    "colCountdown": "倒数",
+    "colReminder": "提醒",
+    "colAction": "操作",
+    "past": "已过",
+    "today": "今天",
+    "daysLeft": "还剩 {{n}} 天",
+    "sameDay": "当天",
+    "edit": "编辑",
+    "delete": "删除",
+    "deleteConfirm": "确定删除？",
+    "cancel": "取消",
+    "typeAnniversary": "纪念日",
+    "typeCountdown": "倒数日",
+    "typeBirthdayHoliday": "生日、节日",
+    "reminder0": "当天",
+    "reminder1": "提前 1 天",
+    "reminder3": "提前 3 天",
+    "reminder7": "提前 7 天",
+    "reminder30": "提前 30 天"
+  }
+}
+

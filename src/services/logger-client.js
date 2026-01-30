@@ -1,0 +1,102 @@
+// 日志服务 - 渲染进程版本（浏览器环境）
+// 通过 IPC 将日志发送到主进程写入文件
+
+class BrowserLogger {
+  constructor() {
+    this.logs = [];
+    this.maxLogs = 1000; // 最多缓存1000条日志
+  }
+
+  formatMessage(level, prefix, message, ...args) {
+    const timestamp = new Date().toISOString();
+    const argsStr = args.length > 0 ? ' ' + args.map(arg => {
+      if (arg === null || arg === undefined) {
+        return String(arg);
+      }
+      if (arg instanceof Error) {
+        return JSON.stringify({
+          message: arg.message,
+          stack: arg.stack,
+          name: arg.name
+        }, null, 2);
+      }
+      if (typeof arg === 'object') {
+        try {
+          return JSON.stringify(arg, null, 2);
+        } catch (e) {
+          return String(arg);
+        }
+      }
+      return String(arg);
+    }).join(' ') : '';
+    return `[${timestamp}] [${level}] ${prefix} ${message}${argsStr}`;
+  }
+
+  async sendToMain(level, prefix, message, ...args) {
+    const logMessage = this.formatMessage(level, prefix, message, ...args);
+    
+    // 缓存日志
+    this.logs.push(logMessage);
+    if (this.logs.length > this.maxLogs) {
+      this.logs.shift(); // 移除最旧的日志
+    }
+
+    // 尝试通过 IPC 发送到主进程（如果可用）
+    if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.log) {
+      try {
+        await window.electronAPI.log(level, logMessage);
+      } catch (error) {
+        // IPC 失败时只输出到控制台
+        console.error('发送日志到主进程失败:', error);
+      }
+    }
+  }
+
+  log(prefix, message, ...args) {
+    const formatted = this.formatMessage('INFO', prefix, message, ...args);
+    console.log(`[${prefix}] ${message}`, ...args);
+    this.sendToMain('INFO', prefix, message, ...args);
+  }
+
+  warn(prefix, message, ...args) {
+    const formatted = this.formatMessage('WARN', prefix, message, ...args);
+    console.warn(`[${prefix}] ⚠️ ${message}`, ...args);
+    this.sendToMain('WARN', prefix, message, ...args);
+  }
+
+  error(prefix, message, ...args) {
+    const formatted = this.formatMessage('ERROR', prefix, message, ...args);
+    console.error(`[${prefix}] ❌ ${message}`, ...args);
+    this.sendToMain('ERROR', prefix, message, ...args);
+  }
+
+  debug(prefix, message, ...args) {
+    if (process.env.NODE_ENV === 'development') {
+      const formatted = this.formatMessage('DEBUG', prefix, message, ...args);
+      console.debug(`[${prefix}] 🔍 ${message}`, ...args);
+      this.sendToMain('DEBUG', prefix, message, ...args);
+    }
+  }
+
+  // 获取缓存的日志
+  getLogs() {
+    return this.logs;
+  }
+
+  // 清空日志缓存
+  clearLogs() {
+    this.logs = [];
+  }
+}
+
+// 单例模式
+let loggerInstance = null;
+
+export function getLogger() {
+  if (!loggerInstance) {
+    loggerInstance = new BrowserLogger();
+  }
+  return loggerInstance;
+}
+
+export default BrowserLogger;

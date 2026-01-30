@@ -1,0 +1,443 @@
+{
+  "common": {
+    "appName": "Personal Butler",
+    "appNameFull": "Personal Butler",
+    "loadingInitializing": "Initializing...",
+    "loadingData": "Loading data...",
+    "cancel": "Cancel"
+  },
+  "layout": {
+    "header": {
+      "title": "Personal Butler"
+    },
+    "sidebar": {
+      "titleShort": "PB",
+      "groups": {
+        "overview": "Overview",
+        "planHabits": "Plans & Habits",
+        "itemsOutfits": "Items & Outfits",
+        "newsAssistant": "News & Assistant",
+        "fun": "Fun",
+        "system": "System"
+      },
+      "menu": {
+        "dashboard": "Dashboard",
+        "profile": "Profile",
+        "schedule": "Schedule",
+        "habits": "Habits",
+        "countdown": "Countdown",
+        "equipment": "Equipment",
+        "clothing": "Clothing",
+        "weather": "Weather & Outfit",
+        "news": "News",
+        "ai": "AI Assistant",
+        "fun": "Fun tools",
+        "settings": "Settings"
+      }
+    }
+  },
+  "fun": {
+    "pageTitle": "Fun tools",
+    "pageDesc": "Kinship, fortune draw, dice, coin flip, random quote — light entertainment.",
+    "tabs": {
+      "relationship": "Kinship",
+      "lottery": "Fortune draw",
+      "dice": "Dice",
+      "coin": "Coin flip",
+      "quote": "Random quote"
+    },
+    "relationship": {
+      "title": "Relationship → Title",
+      "desc": "Enter a kinship chain, e.g. father's mother, mother's brother's wife",
+      "placeholder": "e.g. father's mother",
+      "query": "Query",
+      "reverse": "They call me",
+      "sexMale": "I am male",
+      "sexFemale": "I am female",
+      "sexUnknown": "Unknown",
+      "result": "Title(s)",
+      "noResult": "No title found, try another phrase",
+      "inputHint": "Enter a relationship chain"
+    },
+    "checkin": {
+      "title": "Today's fortune (for fun)",
+      "desc": "Check in to get today's Yi/Ji and a score; not stored in DB.",
+      "button": "Check in today",
+      "done": "Checked in!",
+      "score": "Today's score",
+      "scoreUnit": " pts",
+      "yi": "Suitable today",
+      "ji": "Better avoid"
+    },
+    "lottery": {
+      "title": "Draw a lot (for fun)",
+      "desc": "Random lot with verse and hint; entertainment only.",
+      "button": "Draw",
+      "drew": "Drew!",
+      "no": "No.",
+      "hint": "Hint"
+    },
+    "dice": {
+      "title": "Dice",
+      "desc": "Roll 1–6, for fun.",
+      "button": "Roll",
+      "result": "Result"
+    },
+    "coin": {
+      "title": "Coin flip",
+      "desc": "Heads or tails? Let fate decide.",
+      "button": "Flip",
+      "heads": "Heads",
+      "tails": "Tails"
+    },
+    "quote": {
+      "title": "Random quote",
+      "desc": "Sarcasm,鸡汤, or funny — get one.",
+      "button": "Get one",
+      "drew": "Today's quote"
+    }
+  },
+  "dashboard": {
+    "quickEntry": "Quick entry",
+    "habitProgress": "Habit progress",
+    "viewAllHabits": "View all habits →",
+    "tip": "Tip",
+    "tipDesc1": "Click cards or buttons to jump to the corresponding page.",
+    "tipDesc2": "Current period recommendations update automatically.",
+    "funTools": "Fun tools",
+    "greeting": {
+      "hello": "Hello",
+      "morning": "Good morning",
+      "forenoon": "Good morning",
+      "noon": "Good noon",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening",
+      "night": "Late night"
+    },
+    "greetingTitle": { "sir": "Sir", "madam": "Madam" },
+    "weekendTag": "Happy weekend",
+    "birthdayTitle": "Happy birthday!",
+    "birthdayDesc": "Today is your birthday. Wishing you a wonderful year ahead.",
+    "assistantSuggestion": "{{name}} suggestion",
+    "getSuggestion": "Get today's suggestion",
+    "getSuggestionFailed": "Failed to get suggestion",
+    "goSetupAi": "Set up AI first",
+    "suggestionPlaceholder": "Click \"Get today's suggestion\" to generate daily tips, schedule reminders, habit check-ins, and weather-based outfit suggestions based on your profile, schedule, habits, and wardrobe.",
+    "weather": "Weather",
+    "detail": "Detail",
+    "feelsLike": "Feels like",
+    "humidity": "Humidity",
+    "windSpeed": "Wind speed",
+    "periodRecommend": "Current period",
+    "streakDays": "{{n}} days in a row, keep it up!",
+    "viewAll": "View all",
+    "goCheckIn": "Check in",
+    "streakDaysShort": "{{n}} days",
+    "todayMorningReport": "Morning brief",
+    "todayEveningReport": "Evening brief",
+    "todaySchedule": "Today's schedule",
+    "allDay": "All day",
+    "noTitle": "Untitled",
+    "habitTotal": "Total habits",
+    "recent7Rate": "7-day completion",
+    "longestStreak": "Longest streak",
+    "day": "days",
+    "welcomeMessage": "Welcome to Personal Butler. Complete your profile or add your first habit to get started.",
+    "newsCategory": {
+      "general": "General",
+      "technology": "Tech",
+      "business": "Business",
+      "entertainment": "Entertainment",
+      "sports": "Sports",
+      "science": "Science",
+      "health": "Health"
+    },
+    "periodLabel": {
+      "dawn": "Dawn",
+      "morning": "Morning",
+      "noon": "Noon",
+      "afternoon": "Afternoon",
+      "dusk": "Dusk",
+      "evening": "Evening",
+      "night": "Night"
+    },
+    "checkin": {
+      "title": "Daily check-in",
+      "button": "Check in",
+      "score": "Score",
+      "scoreUnit": " pts",
+      "yi": "Suitable",
+      "ji": "Avoid",
+      "done": "Checked in!"
+    },
+    "quickActions": "Quick actions",
+    "batchCheckIn": "Check in current period habits",
+    "addSchedule": "Add schedule",
+    "batchCheckInConfirm": "Check in today for these habits?",
+    "batchCheckInOk": "Confirm",
+    "batchCheckInDone": "Checked in {{n}} habits",
+    "batchCheckInEmpty": "No habits to check in for current period"
+  },
+  "settings": {
+    "title": "Settings",
+    "newbieGuide": "Guide",
+    "configPriorityTitle": "Config overrides .env",
+    "configPriorityDesc": "Settings below are stored locally and take precedence over environment variables. No restart is required after changing.",
+    "appearance": {
+      "sectionTitle": "Appearance",
+      "themeLabel": "Theme",
+      "themeOptions": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "Follow system"
+      },
+      "languageLabel": "Language",
+      "languageOptions": {
+        "zhCN": "简体中文",
+        "enUS": "English"
+      }
+    },
+    "messages": {
+      "saveSuccess": "Settings saved",
+      "saveFailed": "Save failed",
+      "themeSwitched": "Theme switched",
+      "themeSaveFailed": "Failed to save theme",
+      "languageSwitched": "Language switched",
+      "languageSaveFailed": "Failed to save language",
+      "loginFirst": "Please log in first",
+      "resetSuccess": "Reset {{count}} data types",
+      "resetFailed": "Reset failed"
+    },
+    "sections": {
+      "apikeys": "API Keys",
+      "configuredCount": "{{n}} / {{total}} configured",
+      "configured": "Configured",
+      "notConfigured": "Not configured",
+      "configNote": "Config note",
+      "configNoteDesc": "Keys below are stored locally and override .env. No restart needed after change. Get keys from the respective console; some APIs require separate permissions.",
+      "saveApiKeys": "Save API Keys",
+      "aiAssistant": "AI Assistant",
+      "assistantName": "Assistant name",
+      "assistantNameExtra": "e.g. Jarvis, Xiaomi AI; leave blank for default \"AI Butler\"",
+      "assistantNamePlaceholder": "Jarvis, Xiaomi AI…",
+      "provider": "Provider",
+      "ollamaUrl": "Ollama URL",
+      "ollamaUrlExtra": "Default http://localhost:11434",
+      "ollamaModel": "Model",
+      "ollamaModelExtra": "e.g. llama3.2, qwen2.5",
+      "apiUrlOptional": "API URL (optional)",
+      "apiUrlOpenaiExtra": "Leave blank for OpenAI; for MiMo etc. enter base_url e.g. https://api.xiaomimimo.com/v1",
+      "apiKey": "API Key",
+      "requiredPlaceholder": "Required",
+      "modelOpenaiExtra": "OpenAI: gpt-4o-mini; MiMo: mimo-v2-flash",
+      "apiUrlAnthropicExtra": "Leave blank for Anthropic; custom base_url for compatible services",
+      "modelAnthropicExtra": "e.g. claude-3-5-haiku, claude-3-5-sonnet",
+      "saveAiConfig": "Save AI config",
+      "dataReset": "Data & reset",
+      "dataResetTitle": "Data reset",
+      "dataResetDesc": "Reset will permanently delete: schedule, habits, countdown, equipment, clothing, outfits, AI chats, weather & news cache, etc.",
+      "dataResetDesc2": "Not deleted: account, profile, and settings on this page (API Keys, theme, etc.).",
+      "dataResetButton": "Data reset",
+      "databasePath": "Database file path",
+      "databasePathExtra": "Copy this path for backup or external access; see docs/data-storage.md",
+      "applyInConsole": "Apply in console: ",
+      "requireApiTag": "API required",
+      "apiBridge": "Allow AI to call this app",
+      "apiBridgeDesc": "When enabled, the app runs a local HTTP API (localhost only) so external AI, scripts, or plugins can read/write habits, schedule, countdown, etc.",
+      "apiBridgeEnable": "Enable API",
+      "apiBridgePort": "Port",
+      "apiBridgePortExtra": "Default 3847, listens on 127.0.0.1 only",
+      "apiBridgeSecret": "API Key (optional)",
+      "apiBridgeSecretExtra": "Leave empty to skip auth; if set, requests must include header X-API-Key",
+      "apiBridgeSave": "Save and restart API",
+      "apiBridgeSaveSuccess": "Saved, API restarted",
+      "apiBridgeGenerate": "Generate",
+      "apiBridgeDoc": "API docs",
+      "dailyReminder": "Daily reminder",
+      "dailyReminderDesc": "Show a system notification at the set time with today's summary (requires API bridge enabled).",
+      "dailyReminderTime": "Reminder time",
+      "dailyReminderEnabled": "Enable daily reminder"
+    },
+    "modal": {
+      "resetTitle": "Confirm data reset",
+      "resetOk": "Confirm reset",
+      "resetCancel": "Cancel",
+      "resetContent1": "This will clear all app data (schedule, habits, countdown, equipment, clothing, AI chats, cache, etc.) for this account. This cannot be undone.",
+      "resetContent2": "Continue?"
+    }
+  },
+  "friendlyEmpty": {
+    "habits": {
+      "description": "No habits yet, create your first one ~",
+      "action": "New habit"
+    },
+    "schedule": {
+      "description": "No schedule for today, enjoy your free time",
+      "action": "Add schedule"
+    },
+    "schedulePeriod": {
+      "description": "No habits for this period, taking a break is also nice",
+      "action": "View habits"
+    },
+    "countdown": {
+      "description": "No countdown or anniversary yet, click \"New\" to add one",
+      "action": "New"
+    },
+    "equipment": {
+      "description": "No equipment records yet, add your first item",
+      "action": "Add equipment"
+    },
+    "clothing": {
+      "description": "No clothing data yet, add a few favorites first",
+      "action": "Add clothing"
+    },
+    "outfits": {
+      "description": "No outfits yet, try creating one",
+      "action": "New outfit"
+    },
+    "news": {
+      "description": "No news for now, check back later"
+    },
+    "newsSearch": {
+      "description": "Enter a keyword to search"
+    },
+    "habitsStats": {
+      "description": "No check-in data for this period yet. After you complete habits, records will appear here."
+    },
+    "equipmentNoResult": {
+      "description": "No matching equipment found, try another keyword"
+    },
+    "outfitsNoRecommend": {
+      "description": "No outfit recommendations yet, add some clothes and outfits first"
+    },
+    "outfitsLink": {
+      "description": "Outfit management is on the \"Outfits\" page, go check it out",
+      "action": "Go to outfits"
+    },
+    "generic": {
+      "description": "Nothing here yet, go explore other places"
+    }
+  },
+  "habits": {
+    "title": "Habits",
+    "chart": {
+      "completed": "Completed",
+      "uncompleted": "Not done"
+    },
+    "actions": {
+      "askAI": "Ask AI",
+      "newHabit": "New habit"
+    },
+    "loadingInitializing": "Initializing...",
+    "statsRangeLabel": "Range:",
+    "statsRange7": "Last 7 days",
+    "statsRange30": "Last 30 days",
+    "tabs": {
+      "habits": "Habits & Check-ins",
+      "reports": "Stats & Reports"
+    },
+    "frequency": {
+      "daily": "Daily",
+      "weekdays": "Weekdays",
+      "weekends": "Weekends",
+      "weekly": "Weekly"
+    },
+    "messages": {
+      "created": "Habit created",
+      "updated": "Habit updated",
+      "saveFailed": "Save failed: ",
+      "saveUnknownError": "Unknown error",
+      "deleteConfirm": "Delete this habit? Its check-in records will be removed as well.",
+      "deleteOk": "Delete",
+      "deleteCancel": "Cancel",
+      "deleted": "Habit deleted",
+      "deleteFailed": "Delete failed",
+      "checkIn": "Checked in",
+      "uncheck": "Check-in cancelled",
+      "checkFailed": "Check-in failed",
+      "operationFailed": "Operation failed"
+    },
+    "todayCheck": {
+      "tooltipTargetToday": "Check in today",
+      "tooltipCancel": "Cancel check-in",
+      "tooltipNonTarget": "Not a target day",
+      "label": "Checked in today"
+    },
+    "cards": {
+      "streakTitle": "Streak",
+      "streakSuffix": "days",
+      "recentStatsTitlePrefix": "Last ",
+      "recentStatsTitleSuffix": " days",
+      "reminderPrefix": "Reminder "
+    },
+    "table": {
+      "recentWeekTitle": "Last week check-ins",
+      "habitColumn": "Habit",
+      "todayColumn": "Today"
+    },
+    "reports": {
+      "week": "Weekly",
+      "month": "Monthly",
+      "year": "Yearly",
+      "currentWeek": "This week",
+      "lastWeek": "Last week",
+      "currentMonth": "This month",
+      "lastMonth": "Last month",
+      "currentYear": "This year",
+      "lastYear": "Last year",
+      "byPeriodTitle": "Completion ratio (by period)",
+      "byHabitTitle": "Completion ratio (by habit)",
+      "dailyCompletionTitle": "Daily completion",
+      "reportTitleWeek": "Weekly habit report",
+      "reportTitleMonth": "Monthly habit report",
+      "reportTitleYear": "Yearly habit report",
+      "completionRate": "Completion rate",
+      "summary": "Target {{totalTarget}} times, completed {{totalCompleted}} times",
+      "habitDetailPrefix": "Habit details",
+      "scopeWeek": "Weekly",
+      "scopeMonth": "Monthly",
+      "scopeYear": "Yearly",
+      "scopeRange": "Range: {{start}} ~ {{end}}"
+    }
+  },
+  "schedule": {
+    "title": "Schedule",
+    "listView": "List",
+    "calendarView": "Calendar",
+    "calendarConfig": "Calendar config",
+    "analysis": "Analysis"
+  },
+  "countdown": {
+    "title": "Countdown & Anniversaries",
+    "new": "New",
+    "loading": "Loading...",
+    "updated": "Updated",
+    "created": "Added",
+    "saveFailed": "Save failed",
+    "deleted": "Deleted",
+    "deleteFailed": "Delete failed",
+    "colTitle": "Title",
+    "colType": "Type",
+    "colTargetDate": "Target date",
+    "colCountdown": "Days",
+    "colReminder": "Reminder",
+    "colAction": "Actions",
+    "past": "Past",
+    "today": "Today",
+    "daysLeft": "{{n}} days left",
+    "sameDay": "Same day",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this item?",
+    "cancel": "Cancel",
+    "typeAnniversary": "Anniversary",
+    "typeCountdown": "Countdown",
+    "typeBirthdayHoliday": "Birthday / Holiday",
+    "reminder0": "Same day",
+    "reminder1": "1 day before",
+    "reminder3": "3 days before",
+    "reminder7": "7 days before",
+    "reminder30": "30 days before"
+  }
+}
+
