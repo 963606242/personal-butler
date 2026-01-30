@@ -108,6 +108,7 @@ personal-butler/
 |------|------|
 | [docs/api-bridge.md](docs/api-bridge.md) | 本地 HTTP API：接口列表、认证、与 Clawdbot/脚本联动 |
 | [docs/data-storage.md](docs/data-storage.md) | 数据库文件路径（各系统）、备份与外部访问方式 |
+| [docs/publish.md](docs/publish.md) | **上传 GitHub 与打包发布**（创建仓库、推送、打安装包、Release） |
 | [快速开始.md](快速开始.md) | 安装、运行、构建简要说明 |
 | [开发指南.md](开发指南.md) | 开发状态与模块说明 |
 

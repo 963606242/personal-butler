@@ -9,7 +9,7 @@
     "dev:react": "vite",
     "build": "npm run build:react && npm run build:electron",
     "build:react": "vite build",
-    "build:electron": "electron-builder",
+    "build:electron": "cross-env ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder",
     "preview": "vite preview",
     "postinstall": "electron-builder install-app-deps || electron-rebuild -f -w better-sqlite3",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
@@ -68,8 +68,8 @@
       "docs/**/*"
     ],
     "win": {
-      "target": "nsis",
-      "icon": "build/icon.ico"
+      "target": "dir",
+      "signAndEditExecutable": false
     }
   }
 }
