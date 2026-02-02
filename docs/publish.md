@@ -93,7 +93,15 @@ set ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ && npm run build
 当前配置为 `signAndEditExecutable: false`，**不会**下载或解压 winCodeSign，可避免在 Windows 上因“创建符号链接需管理员/开发者模式”导致的解压失败。exe 使用 Electron 默认图标。  
 若需自定义 exe 图标或版本信息：在 `build.win` 中设置 `"signAndEditExecutable": true` 并配置 `"icon": "build/icon.ico"`，且需以**管理员身份**运行打包，或先在 **设置 → 隐私与安全 → 面向开发人员** 中开启 **开发人员模式**（以便创建符号链接），然后执行 `npm run build`。
 
-### 7. 打压缩包并上传到 GitHub Release
+### 7. 减小打包体积
+
+体积主要来自 **Electron + Chromium 运行时**（约 150–200 MB），应用代码（dist + 主进程）通常只有几 MB。当前已做减包处理：
+
+- **`electronLanguages`: ["en-US", "zh-CN"]**：只保留英文与简体中文语言包，删除其余约 50 个 locale（可减少约 20–40 MB）。
+
+重新执行 `npm run build` 后再 `npm run pack:zip`，zip 体积会明显减小。若仍需更小体积，可考虑使用 Electron 的 [compact 构建](https://www.electronjs.org/docs/latest/tutorial/small-binaries)（需改构建方式）。
+
+### 8. 打压缩包并上传到 GitHub Release
 
 **1. 打 zip 包**
 

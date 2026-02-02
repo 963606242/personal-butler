@@ -71,6 +71,7 @@
       "src/services/ai-bridge-server.js",
       "src/services/logger.js"
     ],
+    "electronLanguages": ["en-US", "zh-CN"],
     "win": {
       "target": "dir",
       "signAndEditExecutable": false
