@@ -33,6 +33,23 @@ export const showReminderNotification = async (payload) => {
     new Notification(payload.title || '', { body: payload.body, tag: `pb-${Date.now()}` });
   }
 };
+export const scheduleLocalNotification = async () => ({ success: false, error: 'Web 定时通知依赖 Service Worker/Push，暂未实现' });
+export const cancelLocalNotification = async () => ({ success: false });
+export const requestPermission = async (scope) => {
+  if (scope === 'notifications') {
+    if (typeof Notification === 'undefined') return { success: false, status: 'denied', error: 'Notification API 不可用' };
+    if (Notification.permission === 'granted') return { success: true, status: 'granted' };
+    if (Notification.permission === 'denied') return { success: false, status: 'denied' };
+    const r = await Notification.requestPermission().catch(() => 'denied');
+    return { success: r === 'granted', status: r };
+  }
+  return { success: false, status: 'prompt', error: `permission(${scope}) 需要平台原生能力` };
+};
+
+export const upsertTodo = () => notSupported('upsertTodo');
+export const deleteTodo = () => notSupported('deleteTodo');
+export const upsertCalendarEvent = () => notSupported('upsertCalendarEvent');
+export const deleteCalendarEvent = () => notSupported('deleteCalendarEvent');
 export const selectImageFile = () => Promise.resolve(null); // Web 需用 <input type="file">，由调用方实现
 
 export const apiBridgeRestart = () => Promise.resolve({ success: false });

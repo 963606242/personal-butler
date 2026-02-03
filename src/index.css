@@ -20,6 +20,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f5f5f5;
+  /* iOS：避免橡皮筋导致页面抖动 */
+  overscroll-behavior: none;
 }
 
 [data-theme='dark'] body {
@@ -29,6 +31,8 @@ body {
 #root {
   width: 100%;
   height: 100vh;
+  /* iOS Safari / WebView：优先使用动态视口高度 */
+  height: 100dvh;
 }
 
 /* ----- 彩蛋与人性化样式 ----- */
@@ -77,6 +81,8 @@ body {
 /* 整体布局：轻微渐变背景，减少“太素” */
 .app-layout {
   background: linear-gradient(165deg, #fafafa 0%, #f5f5f5 38%, #f5f5f5 100%) !important;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 [data-theme='dark'] .app-layout {
   background: linear-gradient(165deg, #1a1a1a 0%, #141414 38%, #141414 100%) !important;
@@ -94,6 +100,53 @@ body {
 .main-content {
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.25s ease;
+}
+
+/* ===== 移动端 / iOS 安全区适配 ===== */
+
+.is-mobile .main-header {
+  padding-top: env(safe-area-inset-top);
+}
+
+.is-mobile .main-content {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+
+/* 手机：卡片/页面边距更紧凑；抽屉覆盖时不出现横向滚动 */
+@media (max-width: 768px) {
+  body {
+    background-color: #fff;
+  }
+
+  .app-layout {
+    background: #fff !important;
+  }
+
+  .main-content {
+    border-radius: 12px !important;
+  }
+
+  /* AntD Modal：手机更贴边更可用 */
+  .ant-modal {
+    max-width: calc(100vw - 24px);
+    margin: 12px auto;
+  }
+  .ant-modal-content {
+    border-radius: 14px;
+  }
+
+  /* 表格在手机允许横向滚动 */
+  .ant-table {
+    width: 100%;
+    overflow-x: auto;
+  }
+}
+
+/* 平板：缩小主内容区圆角与阴影，留更多空间给内容 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .main-content {
+    border-radius: 14px !important;
+  }
 }
 .main-content:hover {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);

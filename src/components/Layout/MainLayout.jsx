@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Spin, Button, theme } from 'antd';
+import { Layout, Menu, Spin, Button, theme, Drawer } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import dayjs from 'dayjs';
 import {
@@ -16,6 +16,7 @@ import {
   SettingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  MenuOutlined,
   ExperimentOutlined,
 } from '@ant-design/icons';
 import useUserStore from '../../stores/userStore';
@@ -29,6 +30,7 @@ import { getLogger } from '../../services/logger-client';
 import { startReminderPolling, stopReminderPolling } from '../../services/reminder-service';
 import { startCountdownReminderPolling, stopCountdownReminderPolling } from '../../services/countdown-reminder-service';
 import ReminderModal from '../Reminder/ReminderModal';
+import { showReminderNotification } from '../../platform';
 
 const logger = getLogger();
 
@@ -37,6 +39,9 @@ const { Header, Sider, Content } = Layout;
 function MainLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { loadUser, isInitialized, currentUser } = useUserStore();
@@ -61,6 +66,33 @@ function MainLayout({ children }) {
 
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 响应式：手机/平板
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mqMobile = window.matchMedia('(max-width: 768px)');
+    const mqTablet = window.matchMedia('(max-width: 1024px)');
+
+    const apply = () => {
+      const mobile = !!mqMobile.matches;
+      const tablet = !!mqTablet.matches;
+      setIsMobile(mobile);
+      setIsTablet(!mobile && tablet);
+      // 平板默认折叠侧栏，节省空间
+      if (!mobile && tablet) setCollapsed(true);
+      if (mobile) setCollapsed(true);
+    };
+
+    apply();
+    mqMobile.addEventListener?.('change', apply);
+    mqTablet.addEventListener?.('change', apply);
+    window.addEventListener('resize', apply);
+    return () => {
+      mqMobile.removeEventListener?.('change', apply);
+      mqTablet.removeEventListener?.('change', apply);
+      window.removeEventListener('resize', apply);
+    };
   }, []);
 
   const { loadEvents } = useCountdownStore();
@@ -119,21 +151,13 @@ function MainLayout({ children }) {
           } else {
             body = '打开个人管家查看今日安排';
           }
-          if (typeof Notification !== 'undefined') {
-            try {
-              new Notification('个人管家', { body });
-            } catch (_) {}
-          }
+          showReminderNotification({ title: '个人管家', body }).catch(() => {});
           try {
             localStorage.setItem(KEY, today);
           } catch (_) {}
         })
         .catch(() => {
-          if (typeof Notification !== 'undefined') {
-            try {
-              new Notification('个人管家', { body: '打开个人管家查看今日安排' });
-            } catch (_) {}
-          }
+          showReminderNotification({ title: '个人管家', body: '打开个人管家查看今日安排' }).catch(() => {});
           try {
             localStorage.setItem(KEY, today);
           } catch (_) {}
@@ -161,6 +185,9 @@ function MainLayout({ children }) {
   }
 
   const siderWidth = collapsed ? 80 : 200;
+  const contentMargin = isMobile ? 12 : isTablet ? 16 : 24;
+  const contentPadding = isMobile ? 12 : isTablet ? 16 : 24;
+  const headerPadding = isMobile ? 12 : 24;
 
   const menuGroupItems = [
     {
@@ -214,57 +241,105 @@ function MainLayout({ children }) {
   ];
 
   return (
-    <Layout className="app-layout" style={{ minHeight: '100vh', height: '100vh', overflow: 'hidden', background: token.colorBgLayout }}>
+    <Layout
+      className={`app-layout ${isMobile ? 'is-mobile' : isTablet ? 'is-tablet' : ''}`}
+      style={{ minHeight: '100vh', overflow: 'hidden', background: token.colorBgLayout }}
+    >
       <ReminderModal />
-      <Sider
-        className="app-sidebar"
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-        theme={isDark ? 'dark' : 'light'}
-        width={200}
-        trigger={null}
-        style={{
-          position: 'fixed',
-          left: 0,
-          top: 0,
-          bottom: 0,
-          zIndex: 100,
-          overflow: 'hidden',
-        }}
-      >
-        <div className="sidebar-inner" style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div className="sidebar-header" style={{ height: 64, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', gap: 8, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
-            <span style={{ fontSize: 18, fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {collapsed ? t('layout.sidebar.titleShort', 'PB') : t('layout.header.title', 'Personal Butler')}
-            </span>
-            <Button
-              type="text"
-              size="small"
-              className="sidebar-collapse-btn"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => setCollapsed(!collapsed)}
-              style={{ flexShrink: 0 }}
-            />
+      {/* 手机：使用抽屉菜单；桌面/平板：使用侧边栏 */}
+      {isMobile ? (
+        <Drawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          placement="left"
+          width={280}
+          bodyStyle={{ padding: 0 }}
+          headerStyle={{ display: 'none' }}
+        >
+          <div className="sidebar-inner" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div
+              className="sidebar-header"
+              style={{
+                height: 64,
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 12px',
+                gap: 8,
+                borderBottom: `1px solid ${token.colorBorderSecondary}`,
+              }}
+            >
+              <span style={{ fontSize: 18, fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {t('layout.header.title', 'Personal Butler')}
+              </span>
+              <Button type="text" size="small" icon={<MenuFoldOutlined />} onClick={() => setDrawerOpen(false)} />
+            </div>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' }}>
+              <Menu
+                className="sidebar-menu"
+                mode="inline"
+                selectedKeys={[location.pathname]}
+                items={menuGroupItems}
+                onClick={({ key }) => {
+                  navigate(key);
+                  setDrawerOpen(false);
+                }}
+                style={{ borderRight: 0 }}
+              />
+            </div>
           </div>
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' }}>
-            <Menu
-              className="sidebar-menu"
-              mode="inline"
-              selectedKeys={[location.pathname]}
-              items={menuGroupItems}
-              onClick={({ key }) => navigate(key)}
-              style={{ borderRight: 0 }}
-            />
+        </Drawer>
+      ) : (
+        <Sider
+          className="app-sidebar"
+          collapsible
+          collapsed={collapsed}
+          onCollapse={setCollapsed}
+          theme={isDark ? 'dark' : 'light'}
+          width={200}
+          trigger={null}
+          style={{
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            zIndex: 100,
+            overflow: 'hidden',
+          }}
+        >
+          <div className="sidebar-inner" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div className="sidebar-header" style={{ height: 64, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', gap: 8, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+              <span style={{ fontSize: 18, fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {collapsed ? t('layout.sidebar.titleShort', 'PB') : t('layout.header.title', 'Personal Butler')}
+              </span>
+              <Button
+                type="text"
+                size="small"
+                className="sidebar-collapse-btn"
+                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                onClick={() => setCollapsed(!collapsed)}
+                style={{ flexShrink: 0 }}
+              />
+            </div>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' }}>
+              <Menu
+                className="sidebar-menu"
+                mode="inline"
+                selectedKeys={[location.pathname]}
+                items={menuGroupItems}
+                onClick={({ key }) => navigate(key)}
+                style={{ borderRight: 0 }}
+              />
+            </div>
           </div>
-        </div>
-      </Sider>
+        </Sider>
+      )}
       <Layout
         style={{
-          marginLeft: siderWidth,
+          marginLeft: isMobile ? 0 : siderWidth,
           flex: 1,
           minWidth: 0,
-          height: '100vh',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
@@ -275,13 +350,23 @@ function MainLayout({ children }) {
           style={{
             flexShrink: 0,
             background: token.colorBgContainer,
-            padding: '0 24px',
+            padding: `0 ${headerPadding}px`,
             borderBottom: `1px solid ${token.colorBorderSecondary}`,
             display: 'flex',
             alignItems: 'center',
+            gap: 8,
           }}
         >
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 500, color: token.colorText }}>
+          {isMobile ? (
+            <Button
+              type="text"
+              aria-label="打开菜单"
+              icon={<MenuOutlined />}
+              onClick={() => setDrawerOpen(true)}
+              style={{ flexShrink: 0 }}
+            />
+          ) : null}
+          <h1 style={{ margin: 0, fontSize: isMobile ? 18 : 20, fontWeight: 500, color: token.colorText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {t('layout.header.title', '个人管家')}
           </h1>
         </Header>
@@ -289,8 +374,8 @@ function MainLayout({ children }) {
           className="main-content"
           style={{
             flex: 1,
-            margin: 24,
-            padding: 24,
+            margin: contentMargin,
+            padding: contentPadding,
             overflow: 'auto',
             background: token.colorBgContainer,
             borderRadius: token.borderRadius,

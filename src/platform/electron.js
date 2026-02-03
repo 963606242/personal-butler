@@ -23,6 +23,21 @@ export const fetchUrl = (url) => api()?.fetchUrl?.(url) ?? Promise.resolve({ suc
 export const fetchJsonPost = (opts) => api()?.fetchJsonPost?.(opts) ?? Promise.resolve({ success: false, errorBody: 'Electron API 不可用' });
 
 export const showReminderNotification = (payload) => api()?.showReminderNotification?.(payload) ?? Promise.resolve();
+export const scheduleLocalNotification = async (payload) => {
+  // Electron 侧暂不做“定时”系统通知：先退化为到点由业务轮询触发的即时通知
+  // 未来如需可在主进程做任务调度（node-cron）或用系统通知 schedule 能力（不同 OS 支持不同）
+  return { success: true };
+};
+export const cancelLocalNotification = async () => ({ success: true });
+export const requestPermission = async (scope) => {
+  // Electron 桌面端一般无需显式请求；这里统一返回 granted
+  return { success: true, status: 'granted' };
+};
+
+export const upsertTodo = async () => ({ success: false, error: 'Electron 暂不支持写入系统代办/提醒事项' });
+export const deleteTodo = async () => ({ success: false, error: 'Electron 暂不支持写入系统代办/提醒事项' });
+export const upsertCalendarEvent = async () => ({ success: false, error: 'Electron 暂不支持写入系统日历' });
+export const deleteCalendarEvent = async () => ({ success: false, error: 'Electron 暂不支持写入系统日历' });
 export const selectImageFile = () => api()?.selectImageFile?.() ?? Promise.resolve(null);
 
 export const apiBridgeRestart = () => api()?.apiBridgeRestart?.() ?? Promise.resolve({ success: false });

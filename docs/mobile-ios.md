@@ -59,6 +59,39 @@
      - **在 Capacitor 环境**：这些方法内部改用 Capacitor 插件（如 `@capacitor/preferences`、`@capacitor-community/sqlite`、本地通知等）。  
    - 数据库：Electron 用的是 better-sqlite3（Node），iOS 上可改用 Capacitor 的 SQLite 插件或前端 IndexedDB（如 Dexie），通过同一套「平台 API」封装，业务代码尽量不直接依赖 Electron。  
 
+### iOS 重点：通知提醒 / 代办 / 日程（Reminders & Calendar）
+
+你提到的「通知提醒等功能请支持 iOS 的提醒、代办与日程」，建议按**三层**来做（从易到难）：
+
+1. **本地通知（提醒）**：用 Capacitor 的 LocalNotifications（iOS 系统通知中心展示）  
+2. **系统代办（Reminders）**：用 iOS EventKit（`EKReminder`）写入系统“提醒事项”  
+3. **系统日程（Calendar）**：用 iOS EventKit（`EKEvent`）写入系统“日历”
+
+在本项目里我已经把这些能力抽象进 `src/platform`：
+
+- `showReminderNotification()`：立即通知（Electron / Web / Capacitor 都可工作）
+- `scheduleLocalNotification()` / `cancelLocalNotification()`：定时通知（Capacitor 侧优先）
+- `upsertTodo()` / `deleteTodo()`：系统代办（iOS Reminders）
+- `upsertCalendarEvent()` / `deleteCalendarEvent()`：系统日程（iOS Calendar）
+- `requestPermission('notifications'|'calendar'|'reminders')`：统一权限入口
+
+#### 需要哪些插件？
+
+- **通知（推荐先做）**：`@capacitor/local-notifications`
+- **日历/提醒事项**：社区插件可用性不稳定，推荐你做一个**自定义 Capacitor 原生插件**，在 iOS 端用 EventKit：
+  - 日历：`EKEventStore` + `EKEvent`
+  - 提醒事项：`EKEventStore` + `EKReminder`
+
+#### 为什么要自定义插件？
+
+因为你的业务对象（“日程/代办/提醒”）需要和系统对象做**双向映射**（至少保存 `systemId`），并处理权限、日历/列表选择、删除/更新等细节；这部分用 EventKit 最直接、可控。
+
+#### 实现顺序（建议）
+
+1. 先把所有“提醒”统一走 `scheduleLocalNotification`（iOS 立刻有系统通知体验）
+2. 再加“同步到系统提醒事项（代办）”开关：保存时调用 `upsertTodo`
+3. 最后加“同步到系统日历”开关：保存时调用 `upsertCalendarEvent`
+
 整体工作量：**中等**，主要是抽一层平台抽象 + 在 Capacitor 里实现一遍存储/通知等。
 
 ---

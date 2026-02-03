@@ -18,7 +18,15 @@
  * @property {(url: string) => Promise<{ success: boolean, data?: any, status?: number, errorBody?: string }>} fetchUrl - GET 请求（主进程，避代理问题）
  * @property {(opts: { url: string, body: object, headers?: Record<string, string> }) => Promise<{ success: boolean, data?: any, status?: number, errorBody?: string }>} fetchJsonPost - POST JSON（主进程）
  *
- * @property {(payload: { title: string, body?: string }) => Promise<void>} showReminderNotification - 系统提醒通知
+ * @property {(payload: { title: string, body?: string }) => Promise<void>} showReminderNotification - 系统提醒通知（立即触发）
+ * @property {(payload: { id: string, title: string, body?: string, at: number, sound?: boolean }) => Promise<{ success: boolean, error?: string }>} scheduleLocalNotification - 定时本地通知（iOS/Android: LocalNotifications；Electron: 可退化为立即通知或后续实现）
+ * @property {(id: string) => Promise<{ success: boolean }>} cancelLocalNotification - 取消本地通知
+ * @property {(scope: 'notifications' | 'calendar' | 'reminders') => Promise<{ success: boolean, status: 'granted' | 'denied' | 'prompt', error?: string }>} requestPermission - 请求系统权限（通知/日历/提醒事项）
+ *
+ * @property {(payload: { externalId: string, title: string, notes?: string, dueAt?: number, completed?: boolean }) => Promise<{ success: boolean, systemId?: string, error?: string }>} upsertTodo - 写入系统代办/提醒事项（iOS Reminders / 其他平台可占位）
+ * @property {(systemId: string) => Promise<{ success: boolean, error?: string }>} deleteTodo - 删除系统代办
+ * @property {(payload: { externalId: string, title: string, notes?: string, startAt: number, endAt: number, location?: string, allDay?: boolean }) => Promise<{ success: boolean, systemId?: string, error?: string }>} upsertCalendarEvent - 写入系统日程（iOS Calendar / 其他平台可占位）
+ * @property {(systemId: string) => Promise<{ success: boolean, error?: string }>} deleteCalendarEvent - 删除系统日程
  * @property {() => Promise<{ success: boolean, filePath?: string, canceled?: boolean } | null>} selectImageFile - 选择图片文件；Electron 返回 { success, filePath } 或 { canceled }，Web 返回 null
  *
  * @property {() => Promise<{ success?: boolean, [key: string]: any }>} apiBridgeRestart - 重启 API 桥服务

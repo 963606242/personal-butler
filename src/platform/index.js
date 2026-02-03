@@ -5,10 +5,12 @@
 
 import * as electronImpl from './electron';
 import * as webImpl from './web';
+import * as capacitorImpl from './capacitor';
 
 const hasElectronAPI = () => typeof window !== 'undefined' && !!window.electronAPI;
+const hasCapacitor = () => typeof window !== 'undefined' && !!window.Capacitor;
 
-const platform = hasElectronAPI() ? electronImpl : webImpl;
+const platform = hasCapacitor() ? capacitorImpl : hasElectronAPI() ? electronImpl : webImpl;
 
 export const getAppVersion = platform.getAppVersion;
 export const getUserDataPath = platform.getUserDataPath;
@@ -25,6 +27,13 @@ export const fetchUrl = platform.fetchUrl;
 export const fetchJsonPost = platform.fetchJsonPost;
 
 export const showReminderNotification = platform.showReminderNotification;
+export const scheduleLocalNotification = platform.scheduleLocalNotification;
+export const cancelLocalNotification = platform.cancelLocalNotification;
+export const requestPermission = platform.requestPermission;
+export const upsertTodo = platform.upsertTodo;
+export const deleteTodo = platform.deleteTodo;
+export const upsertCalendarEvent = platform.upsertCalendarEvent;
+export const deleteCalendarEvent = platform.deleteCalendarEvent;
 export const selectImageFile = platform.selectImageFile;
 
 export const apiBridgeRestart = platform.apiBridgeRestart;
