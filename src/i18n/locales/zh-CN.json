@@ -10,6 +10,9 @@
     "header": {
       "title": "个人管家"
     },
+    "mobile": {
+      "more": "更多"
+    },
     "sidebar": {
       "titleShort": "PB",
       "groups": {

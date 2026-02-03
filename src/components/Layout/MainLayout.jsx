@@ -16,8 +16,9 @@ import {
   SettingOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  MenuOutlined,
   ExperimentOutlined,
+  AppstoreOutlined,
+  RightOutlined,
 } from '@ant-design/icons';
 import useUserStore from '../../stores/userStore';
 import useScheduleStore from '../../stores/scheduleStore';
@@ -42,6 +43,7 @@ function MainLayout({ children }) {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [moreSheetOpen, setMoreSheetOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { loadUser, isInitialized, currentUser } = useUserStore();
@@ -240,56 +242,67 @@ function MainLayout({ children }) {
     },
   ];
 
+  // 移动端底部 Tab：首页、日程、习惯、AI、更多
+  const mobileTabs = [
+    { path: '/', label: t('layout.sidebar.menu.dashboard', '仪表盘'), icon: DashboardOutlined },
+    { path: '/schedule', label: t('layout.sidebar.menu.schedule', '日程管理'), icon: CalendarOutlined },
+    { path: '/habits', label: t('layout.sidebar.menu.habits', '习惯追踪'), icon: CheckCircleOutlined },
+    { path: '/ai', label: t('layout.sidebar.menu.ai', 'AI助手'), icon: RobotOutlined },
+    { path: 'more', label: t('layout.mobile.more', '更多'), icon: AppstoreOutlined },
+  ];
+
+  // 「更多」Sheet 中的条目（不含已在 Tab 的）
+  const moreSheetItems = [
+    { path: '/profile', icon: UserOutlined, label: t('layout.sidebar.menu.profile', '个人信息') },
+    { path: '/countdown', icon: GiftOutlined, label: t('layout.sidebar.menu.countdown', '倒数纪念日') },
+    { path: '/equipment', icon: ToolOutlined, label: t('layout.sidebar.menu.equipment', '装备管理') },
+    { path: '/clothing', icon: SkinOutlined, label: t('layout.sidebar.menu.clothing', '服装管理') },
+    { path: '/weather', icon: CloudOutlined, label: t('layout.sidebar.menu.weather', '天气与搭配') },
+    { path: '/news', icon: FileTextOutlined, label: t('layout.sidebar.menu.news', '新闻资讯') },
+    { path: '/fun', icon: ExperimentOutlined, label: t('layout.sidebar.menu.fun', '趣味工具') },
+    { path: '/settings', icon: SettingOutlined, label: t('layout.sidebar.menu.settings', '设置') },
+  ];
+
   return (
     <Layout
       className={`app-layout ${isMobile ? 'is-mobile' : isTablet ? 'is-tablet' : ''}`}
       style={{ minHeight: '100vh', overflow: 'hidden', background: token.colorBgLayout }}
     >
       <ReminderModal />
-      {/* 手机：使用抽屉菜单；桌面/平板：使用侧边栏 */}
+      {/* 手机：底部 Tab + 「更多」底部 Sheet；桌面/平板：侧边栏 */}
       {isMobile ? (
-        <Drawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          placement="left"
-          width={280}
-          bodyStyle={{ padding: 0 }}
-          headerStyle={{ display: 'none' }}
-        >
-          <div className="sidebar-inner" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div
-              className="sidebar-header"
-              style={{
-                height: 64,
-                flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0 12px',
-                gap: 8,
-                borderBottom: `1px solid ${token.colorBorderSecondary}`,
-              }}
-            >
-              <span style={{ fontSize: 18, fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {t('layout.header.title', 'Personal Butler')}
-              </span>
-              <Button type="text" size="small" icon={<MenuFoldOutlined />} onClick={() => setDrawerOpen(false)} />
+        <>
+          {/* 「更多」底部弹出：iOS 风格列表 */}
+          <Drawer
+            open={moreSheetOpen}
+            onClose={() => setMoreSheetOpen(false)}
+            placement="bottom"
+            height="70vh"
+            styles={{ body: { padding: 0 }, wrapper: {} }}
+            headerStyle={{ display: 'none' }}
+            className="mobile-more-drawer"
+          >
+            <div className="mobile-more-sheet-handle" />
+            <div className="mobile-more-sheet-title">{t('layout.mobile.more', '更多')}</div>
+            <div className="mobile-more-sheet-list">
+              {moreSheetItems.map(({ path, icon: Icon, label }) => (
+                <button
+                  key={path}
+                  type="button"
+                  className="mobile-more-sheet-item"
+                  onClick={() => {
+                    navigate(path);
+                    setMoreSheetOpen(false);
+                  }}
+                >
+                  <span className="mobile-more-sheet-item-icon"><Icon /></span>
+                  <span className="mobile-more-sheet-item-label">{label}</span>
+                  <RightOutlined className="mobile-more-sheet-item-arrow" />
+                </button>
+              ))}
             </div>
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', WebkitOverflowScrolling: 'touch' }}>
-              <Menu
-                className="sidebar-menu"
-                mode="inline"
-                selectedKeys={[location.pathname]}
-                items={menuGroupItems}
-                onClick={({ key }) => {
-                  navigate(key);
-                  setDrawerOpen(false);
-                }}
-                style={{ borderRight: 0 }}
-              />
-            </div>
-          </div>
-        </Drawer>
+          </Drawer>
+        </>
       ) : (
         <Sider
           className="app-sidebar"
@@ -357,21 +370,12 @@ function MainLayout({ children }) {
             gap: 8,
           }}
         >
-          {isMobile ? (
-            <Button
-              type="text"
-              aria-label="打开菜单"
-              icon={<MenuOutlined />}
-              onClick={() => setDrawerOpen(true)}
-              style={{ flexShrink: 0 }}
-            />
-          ) : null}
-          <h1 style={{ margin: 0, fontSize: isMobile ? 18 : 20, fontWeight: 500, color: token.colorText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <h1 style={{ margin: 0, fontSize: isMobile ? 18 : 20, fontWeight: 500, color: token.colorText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
             {t('layout.header.title', '个人管家')}
           </h1>
         </Header>
         <Content
-          className="main-content"
+          className={`main-content ${isMobile ? 'main-content-mobile' : ''}`}
           style={{
             flex: 1,
             margin: contentMargin,
@@ -384,6 +388,29 @@ function MainLayout({ children }) {
         >
           {children}
         </Content>
+        {/* 移动端：底部 Tab 栏（iOS 风格） */}
+        {isMobile ? (
+          <nav className="mobile-tab-bar" aria-label="主导航">
+            {mobileTabs.map(({ path, label, icon: Icon }) => {
+              const isMore = path === 'more';
+              const isInMoreSection = moreSheetItems.some((item) => item.path === location.pathname);
+              const isActive = isMore ? (moreSheetOpen || isInMoreSection) : location.pathname === path;
+              return (
+                <button
+                  key={path}
+                  type="button"
+                  className={`mobile-tab-item ${isActive ? 'mobile-tab-item-active' : ''}`}
+                  onClick={() => (isMore ? setMoreSheetOpen(true) : navigate(path))}
+                  aria-current={isActive ? 'page' : undefined}
+                  aria-label={label}
+                >
+                  <span className="mobile-tab-icon"><Icon /></span>
+                  <span className="mobile-tab-label">{label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        ) : null}
       </Layout>
     </Layout>
   );
