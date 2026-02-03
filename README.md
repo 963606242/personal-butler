@@ -106,6 +106,7 @@ personal-butler/
 | [docs/api-bridge.md](docs/api-bridge.md) | Local API: endpoints, auth, use with Clawdbot/scripts |
 | [docs/data-storage.md](docs/data-storage.md) | Where the DB file is and how to access it |
 | [docs/publish.md](docs/publish.md) | Build, pack zip, upload to GitHub Releases |
+| [docs/mobile-ios.md](docs/mobile-ios.md) | **Running on iPhone** (Capacitor, PWA, React Native) |
 
 ---
 

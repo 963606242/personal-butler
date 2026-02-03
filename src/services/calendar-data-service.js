@@ -5,6 +5,7 @@
  */
 import dayjs from 'dayjs';
 import { getLogger } from './logger-client';
+import { fetchCalendarData as platformFetchCalendarData } from '../platform';
 
 const logger = getLogger();
 
@@ -67,35 +68,31 @@ class CalendarDataService {
       
       let result;
       
-      // 尝试通过 Electron IPC 在主进程中请求（避免 CORS）
-      if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.fetchCalendarData) {
-        try {
-          logger.log('CalendarDataService', '使用 IPC 请求 API');
-          const response = await window.electronAPI.fetchCalendarData(apiUrl);
-          logger.log('CalendarDataService', 'IPC 响应:', {
-            success: response.success,
-            hasData: !!response.data,
-            dataKeys: response.data ? Object.keys(response.data).slice(0, 10) : [],
-            dataSample: response.data ? JSON.stringify(response.data).substring(0, 500) : null,
-          });
-          
-          if (response.success) {
-            result = response.data;
-          } else {
-            throw new Error(response.error || '请求失败');
-          }
-        } catch (ipcError) {
-          logger.warn('CalendarDataService', 'IPC 请求失败，尝试直接 fetch:', ipcError?.message);
-          // 如果 IPC 失败，尝试直接 fetch（可能会遇到 CORS）
-          const response = await fetch(apiUrl);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-          result = await response.json();
+      try {
+        logger.log('CalendarDataService', '使用平台 API 请求');
+        const response = await platformFetchCalendarData(apiUrl);
+        logger.log('CalendarDataService', '平台响应:', {
+          success: response.success,
+          hasData: !!response.data,
+          dataKeys: response.data ? Object.keys(response.data).slice(0, 10) : [],
+          dataSample: response.data ? JSON.stringify(response.data).substring(0, 500) : null,
+        });
+        if (response.success) {
+          result = response.data;
+        } else {
+          throw new Error(response.error || '请求失败');
         }
-      } else {
-        // 非 Electron 环境，直接 fetch（可能会遇到 CORS）
-        logger.log('CalendarDataService', '非 Electron 环境，直接 fetch');
+      } catch (platformError) {
+        logger.warn('CalendarDataService', '平台请求失败，尝试直接 fetch:', platformError?.message);
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        result = await response.json();
+      }
+      if (!result) {
+        // 兜底：直接 fetch（如 Web 环境平台已用 fetch 实现则不会走到这里）
+        logger.log('CalendarDataService', '直接 fetch');
         const response = await fetch(apiUrl);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);

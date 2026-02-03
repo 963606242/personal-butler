@@ -9,6 +9,7 @@ import {
   CLOTHING_STYLES,
   WASH_STATUS,
 } from '../../stores/clothingStore';
+import { selectImageFile } from '../../platform';
 
 const { TextArea } = Input;
 
@@ -43,17 +44,17 @@ function ClothingFormModal({ visible, form, onOk, onCancel, editingClothing }) {
 
   const handleImageSelect = async () => {
     try {
-      if (window.electronAPI && window.electronAPI.selectImageFile) {
-        const filePath = await window.electronAPI.selectImageFile();
-        if (filePath) {
-          // Electron 环境：使用 file:// 协议
-          const imagePath = filePath.replace(/\\/g, '/');
-          const imageUrl = imagePath.startsWith('file://') ? imagePath : `file:///${imagePath}`;
-          form.setFieldsValue({ image_path: filePath });
-          setImagePreview(imageUrl);
-        }
+      const result = await selectImageFile();
+      const filePath = result && (typeof result === 'string' ? result : result.filePath);
+      if (filePath) {
+        const imagePath = filePath.replace(/\\/g, '/');
+        const imageUrl = imagePath.startsWith('file://') ? imagePath : `file:///${imagePath}`;
+        form.setFieldsValue({ image_path: filePath });
+        setImagePreview(imageUrl);
+      } else if (result && !result.canceled) {
+        message.error('选择图片失败');
       } else {
-        // Web 环境：使用文件输入
+        // Web 或未选文件：Web 环境使用文件输入
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';

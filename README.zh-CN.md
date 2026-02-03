@@ -106,6 +106,7 @@ personal-butler/
 | [docs/api-bridge.md](docs/api-bridge.md) | 本地 API：接口、认证、与 Clawdbot/脚本联动 |
 | [docs/data-storage.md](docs/data-storage.md) | 数据库文件路径与外部访问方式 |
 | [docs/publish.md](docs/publish.md) | 构建、打 zip、上传 GitHub Release |
+| [docs/mobile-ios.md](docs/mobile-ios.md) | **在 iPhone 上运行**（Capacitor、PWA、React Native） |
 
 ---
 

@@ -7,6 +7,7 @@ import { Modal, Form, Input, Select, DatePicker, InputNumber, Button, Row, Col, 
 import { UploadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_STATUS } from '../../stores/equipmentStore';
+import { selectImageFile } from '../../platform';
 
 const { TextArea } = Input;
 
@@ -37,20 +38,17 @@ function EquipmentFormModal({ open, editing, onCancel, onOk, form }) {
 
   const handleImageSelect = async () => {
     try {
-      if (window.electronAPI?.selectImageFile) {
-        const result = await window.electronAPI.selectImageFile();
-        if (result?.success && result.filePath) {
-          const filePath = result.filePath;
-          setImagePath(filePath);
-          // 转换 Windows 路径为 file:// URL
-          const fileUrl = `file:///${filePath.replace(/\\/g, '/')}`;
-          setImagePreview(fileUrl);
-          form.setFieldsValue({ image_path: filePath });
-        } else if (!result?.canceled) {
-          message.error('选择图片失败');
-        }
+      const result = await selectImageFile();
+      const filePath = result && (typeof result === 'string' ? result : result.filePath);
+      if (filePath) {
+        setImagePath(filePath);
+        const fileUrl = `file:///${filePath.replace(/\\/g, '/')}`;
+        setImagePreview(fileUrl);
+        form.setFieldsValue({ image_path: filePath });
+      } else if (result && !result.canceled) {
+        message.error('选择图片失败');
       } else {
-        // Web环境：使用input file
+        // Web 环境：使用 input file
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';

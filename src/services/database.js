@@ -1,5 +1,6 @@
-// 数据库服务 - 渲染进程版本（通过IPC调用主进程）
+// 数据库服务 - 渲染进程版本（通过平台 API：Electron IPC 或 Web IndexedDB）
 import { getLogger } from './logger-client';
+import { isElectron, dbInit as platformDbInit, dbQuery as platformDbQuery, dbExecute as platformDbExecute } from '../platform';
 
 class DatabaseService {
   constructor() {
@@ -10,23 +11,21 @@ class DatabaseService {
   async init() {
     try {
       this.logger.log('DB-Client', '开始初始化数据库客户端...');
-      
-      if (typeof window !== 'undefined' && window.electronAPI) {
-        // Electron环境
-        this.logger.log('DB-Client', 'Electron 环境，通过 IPC 初始化');
-        const result = await window.electronAPI.dbInit();
-        this.logger.log('DB-Client', 'IPC 初始化结果', result);
-        
+
+      if (isElectron()) {
+        this.logger.log('DB-Client', 'Electron 环境，通过平台 API 初始化');
+        const result = await platformDbInit();
+        this.logger.log('DB-Client', '平台初始化结果', result);
+
         if (result.success) {
           this.initialized = true;
           this.logger.log('DB-Client', '✅ 数据库客户端初始化成功');
           return true;
         } else {
-          this.logger.error('DB-Client', '❌ IPC 初始化失败:', result.error);
+          this.logger.error('DB-Client', '❌ 平台初始化失败:', result.error);
           throw new Error(result.error);
         }
       } else {
-        // Web环境，使用IndexedDB
         this.logger.log('DB-Client', 'Web 环境，使用 IndexedDB');
         await this.initIndexedDB();
         this.initialized = true;
@@ -55,21 +54,19 @@ class DatabaseService {
         await this.init();
       }
       
-      if (typeof window !== 'undefined' && window.electronAPI) {
-        // Electron环境，通过IPC调用
-        this.logger.log('DB-Client', '通过 IPC 调用查询');
-        const result = await window.electronAPI.dbQuery(sql, params);
-        this.logger.log('DB-Client', 'IPC 查询结果:', result);
-        
+      if (isElectron()) {
+        this.logger.log('DB-Client', '通过平台 API 调用查询');
+        const result = await platformDbQuery(sql, params);
+        this.logger.log('DB-Client', '平台查询结果:', result);
+
         if (result.success) {
           this.logger.log('DB-Client', '✅ 查询成功，返回', result.data?.length || 0, '条记录');
           return result.data;
         } else {
-          this.logger.error('DB-Client', '❌ IPC 查询失败:', result.error);
+          this.logger.error('DB-Client', '❌ 平台查询失败:', result.error);
           throw new Error(result.error);
         }
       } else {
-        // Web环境，使用IndexedDB
         this.logger.log('DB-Client', '使用 IndexedDB 查询');
         return await this.queryIndexedDB(sql, params);
       }
@@ -92,21 +89,19 @@ class DatabaseService {
         await this.init();
       }
       
-      if (typeof window !== 'undefined' && window.electronAPI) {
-        // Electron环境，通过IPC调用
-        this.logger.log('DB-Client', '通过 IPC 调用更新');
-        const result = await window.electronAPI.dbExecute(sql, params);
-        this.logger.log('DB-Client', 'IPC 更新结果:', result);
-        
+      if (isElectron()) {
+        this.logger.log('DB-Client', '通过平台 API 调用更新');
+        const result = await platformDbExecute(sql, params);
+        this.logger.log('DB-Client', '平台更新结果:', result);
+
         if (result.success) {
           this.logger.log('DB-Client', '✅ 更新成功');
           return result.data;
         } else {
-          this.logger.error('DB-Client', '❌ IPC 更新失败:', result.error);
+          this.logger.error('DB-Client', '❌ 平台更新失败:', result.error);
           throw new Error(result.error);
         }
       } else {
-        // Web环境，使用IndexedDB
         this.logger.log('DB-Client', '使用 IndexedDB 更新');
         return await this.executeIndexedDB(sql, params);
       }

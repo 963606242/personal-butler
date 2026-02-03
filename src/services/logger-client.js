@@ -1,5 +1,6 @@
 // 日志服务 - 渲染进程版本（浏览器环境）
-// 通过 IPC 将日志发送到主进程写入文件
+// 通过平台 API 将日志发送到主进程（Electron）或仅控制台（Web）
+import { log as platformLog } from '../platform';
 
 class BrowserLogger {
   constructor() {
@@ -41,13 +42,11 @@ class BrowserLogger {
       this.logs.shift(); // 移除最旧的日志
     }
 
-    // 尝试通过 IPC 发送到主进程（如果可用）
-    if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.log) {
-      try {
-        await window.electronAPI.log(level, logMessage);
-      } catch (error) {
-        // IPC 失败时只输出到控制台
-        console.error('发送日志到主进程失败:', error);
+    try {
+      await platformLog(level, logMessage);
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('平台日志发送失败:', error);
       }
     }
   }

@@ -4,6 +4,7 @@
  * 配置来自设置页，优先于环境变量。
  */
 import { getConfigStr } from './config';
+import { isElectron, fetchJsonPost as platformFetchJsonPost } from '../platform';
 
 const OPENAI_OFFICIAL = 'https://api.openai.com/v1';
 const ANTHROPIC_OFFICIAL = 'https://api.anthropic.com/v1';
@@ -67,9 +68,8 @@ function resolveAnthropicMessagesUrl() {
 }
 
 async function postJson(url, body) {
-  const isElectron = typeof window !== 'undefined' && window.electronAPI?.fetchJsonPost;
-  if (isElectron) {
-    const r = await window.electronAPI.fetchJsonPost({ url, body });
+  if (isElectron()) {
+    const r = await platformFetchJsonPost({ url, body });
     if (!r.success) throw new Error(r.errorBody || `HTTP ${r.status}`);
     return r.data;
   }
@@ -101,10 +101,9 @@ async function chatOpenAI(messages) {
   if (!key) throw new Error('请在设置中配置 OpenAI API Key');
   const model = getOpenAIModel();
   const url = resolveOpenAICompletionsUrl();
-  const isElectron = typeof window !== 'undefined' && window.electronAPI?.fetchJsonPost;
   let data;
-  if (isElectron) {
-    const r = await window.electronAPI.fetchJsonPost({
+  if (isElectron()) {
+    const r = await platformFetchJsonPost({
       url,
       body: { model, messages },
       headers: { Authorization: `Bearer ${key}` },
@@ -144,10 +143,9 @@ async function chatAnthropic(messages) {
   };
   if (system) body.system = system;
 
-  const isElectron = typeof window !== 'undefined' && window.electronAPI?.fetchJsonPost;
   let data;
-  if (isElectron) {
-    const r = await window.electronAPI.fetchJsonPost({
+  if (isElectron()) {
+    const r = await platformFetchJsonPost({
       url,
       body,
       headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' },

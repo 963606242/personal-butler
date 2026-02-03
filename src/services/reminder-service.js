@@ -1,10 +1,11 @@
 /**
  * 日程提醒服务
- * 定时检查待提醒日程，触发 in-app 弹窗 + Windows 10/11 系统通知（Electron）
+ * 定时检查待提醒日程，触发 in-app 弹窗 + 系统通知（Electron / Web Notification）
  */
 import dayjs from 'dayjs';
 import { getLogger } from './logger-client';
 import { expandScheduleForDateRange } from '../utils/schedule-repeat';
+import { showReminderNotification } from '../platform';
 
 const logger = getLogger();
 const REMINDER_STORAGE_PREFIX = 'pb_reminder_done_';
@@ -55,19 +56,16 @@ async function ensureNotificationPermission() {
 }
 
 /**
- * 系统通知：优先 Electron 主进程（Windows 10/11 原生 Toast），否则 Web Notification
+ * 系统通知：通过平台 API（Electron 原生 Toast 或 Web Notification）
  * @param {string} title
  * @param {string} [body]
  */
 async function showSystemNotification(title, body = '') {
-  const api = typeof window !== 'undefined' && window.electronAPI;
-  if (api && typeof api.showReminderNotification === 'function') {
-    try {
-      await api.showReminderNotification({ title, body });
-      return;
-    } catch (e) {
-      logger.warn('ReminderService', 'Electron 系统通知失败，回退 Web Notification:', e?.message);
-    }
+  try {
+    await showReminderNotification({ title, body });
+    return;
+  } catch (e) {
+    logger.warn('ReminderService', '平台通知失败，尝试 Web Notification:', e?.message);
   }
   const ok = await ensureNotificationPermission();
   if (!ok) return;

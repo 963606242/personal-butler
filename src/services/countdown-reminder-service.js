@@ -5,6 +5,7 @@
 import dayjs from 'dayjs';
 import { getLogger } from './logger-client';
 import { getNextOccurrence } from '../stores/countdownStore';
+import { showReminderNotification } from '../platform';
 
 const logger = getLogger();
 const STORAGE_PREFIX = 'pb_countdown_reminder_done_';
@@ -35,14 +36,11 @@ function markDone(eventId, dateStr) {
 }
 
 async function showNotification(title, body) {
-  const api = typeof window !== 'undefined' && window.electronAPI;
-  if (api && typeof api.showReminderNotification === 'function') {
-    try {
-      await api.showReminderNotification({ title, body });
-      return;
-    } catch (e) {
-      logger.warn('CountdownReminder', 'Electron 通知失败', e?.message);
-    }
+  try {
+    await showReminderNotification({ title, body });
+    return;
+  } catch (e) {
+    logger.warn('CountdownReminder', '平台通知失败', e?.message);
   }
   if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
     try {

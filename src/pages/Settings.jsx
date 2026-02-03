@@ -41,6 +41,7 @@ import { useOnboarding } from '../context/OnboardingContext';
 import { useI18n } from '../context/I18nContext';
 import { API_KEY_CONFIGS } from '../constants/settings-api-links';
 import { resetAppData } from '../services/data-reset-service';
+import { getDatabasePath, apiBridgeRestart, readApiBridgeDoc, isElectron } from '../platform';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import './Settings.css';
@@ -123,8 +124,8 @@ export default function Settings() {
   }, [loaded, get]);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.electronAPI?.getDatabasePath) {
-      window.electronAPI.getDatabasePath().then(setDatabasePath).catch(() => {});
+    if (isElectron()) {
+      getDatabasePath().then(setDatabasePath).catch(() => {});
     }
   }, []);
 
@@ -181,8 +182,8 @@ export default function Settings() {
       await set('api_bridge_enabled', apiBridgeEnabled ? '1' : '0');
       await set('api_bridge_port', String(apiBridgePort));
       await set('api_bridge_secret', (apiBridgeSecret || '').trim());
-      if (typeof window !== 'undefined' && window.electronAPI?.apiBridgeRestart) {
-        const result = await window.electronAPI.apiBridgeRestart();
+      if (isElectron()) {
+        const result = await apiBridgeRestart();
         if (result?.success) {
           message.success(t('settings.sections.apiBridgeSaveSuccess', '已保存，API 已重启'));
         } else {
@@ -491,8 +492,8 @@ export default function Settings() {
               <Button
                 type="link"
                 onClick={async () => {
-                  if (typeof window !== 'undefined' && window.electronAPI?.readApiBridgeDoc) {
-                    const { success, content } = await window.electronAPI.readApiBridgeDoc();
+                  if (isElectron()) {
+                    const { success, content } = await readApiBridgeDoc();
                     setApiBridgeDocContent(success ? content : '');
                   }
                   setApiBridgeDocVisible(true);
