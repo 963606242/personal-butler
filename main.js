@@ -1,8 +1,9 @@
-const { app, BrowserWindow, Menu, ipcMain, Notification, dialog, protocol } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, Notification, dialog, protocol, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
 const http = require('http');
+const url = require('url');
 
 // 检测开发模式：检查环境变量或 dist 目录是否存在
 const isDev = process.env.NODE_ENV === 'development' || 
@@ -502,5 +503,203 @@ ipcMain.handle('select-image-file', async () => {
   } catch (error) {
     console.error('[IPC] select-image-file 失败:', error);
     return { success: false, error: error.message };
+  }
+});
+
+// 媒体文件选择（图片/视频）
+ipcMain.handle('select-media-file', async (event, opts = {}) => {
+  try {
+    const accept = opts.accept || 'all';
+    let filters = [];
+    if (accept === 'image') {
+      filters = [{ name: '图片文件', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'] }];
+    } else if (accept === 'video') {
+      filters = [{ name: '视频文件', extensions: ['mp4', 'mov', 'avi', 'mkv', 'webm'] }];
+    } else {
+      filters = [
+        { name: '图片文件', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'] },
+        { name: '视频文件', extensions: ['mp4', 'mov', 'avi', 'mkv', 'webm'] },
+        { name: '所有文件', extensions: ['*'] },
+      ];
+    }
+
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: accept === 'image' ? '选择图片' : accept === 'video' ? '选择视频' : '选择媒体文件',
+      filters,
+      properties: ['openFile'],
+    });
+
+    if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+      return { success: false, canceled: true };
+    }
+
+    return { success: true, filePath: result.filePaths[0] };
+  } catch (error) {
+    console.error('[IPC] select-media-file 失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 录音状态（主进程暂不实现录音，由渲染进程用 Web Audio API）
+let audioRecordingState = null;
+ipcMain.handle('start-audio-recording', async () => {
+  // Electron 主进程暂不实现录音，建议渲染进程使用 Web Audio API（MediaRecorder）
+  // 未来可集成 node-record-lpcm16 等库
+  return { success: false, error: 'Electron 主进程录音暂未实现，请使用渲染进程 Web Audio API' };
+});
+
+ipcMain.handle('stop-audio-recording', async () => {
+  return { success: false, error: 'Electron 主进程录音暂未实现' };
+});
+
+ipcMain.handle('cancel-audio-recording', async () => {
+  audioRecordingState = null;
+  return { success: true };
+});
+
+// 录音转写（OpenAI Whisper），供日记模块使用
+ipcMain.handle('transcribe-audio', async (event, { base64, apiKey }) => {
+  if (!apiKey || !base64) {
+    return { success: false, error: '缺少 API Key 或音频数据' };
+  }
+  try {
+    const buffer = Buffer.from(base64, 'base64');
+    const form = new FormData();
+    form.append('file', new Blob([buffer], { type: 'audio/webm' }), 'audio.webm');
+    form.append('model', 'whisper-1');
+
+    const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      return { success: false, error: `Whisper API ${res.status}: ${errText.slice(0, 200)}` };
+    }
+    const data = await res.json();
+    return { success: true, text: data.text || '' };
+  } catch (error) {
+    console.error('[IPC] transcribe-audio 失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 同步：导出全量数据（主进程执行，返回 JSON 对象）
+ipcMain.handle('sync-export-data', async () => {
+  try {
+    if (!dbService || !dbService.initialized) await initDatabase();
+    if (!dbService || !dbService.initialized) return { success: false, error: '数据库未初始化' };
+    const payload = dbService.exportForSync();
+    return { success: true, payload };
+  } catch (error) {
+    console.error('[IPC] sync-export-data 失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 同步：导入全量数据（主进程执行）
+ipcMain.handle('sync-import-data', async (event, payload) => {
+  try {
+    if (!dbService || !dbService.initialized) await initDatabase();
+    if (!dbService || !dbService.initialized) return { success: false, error: '数据库未初始化' };
+    dbService.importFromSync(payload);
+    return { success: true };
+  } catch (error) {
+    console.error('[IPC] sync-import-data 失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// OneDrive OAuth：临时 HTTP 服务接收 redirect，打开登录窗口并返回 code
+let oneDriveLoginResolve = null;
+let oneDriveLoginServer = null;
+let oneDriveLoginWindow = null;
+
+ipcMain.handle('sync-open-oauth-login', async (event, { authUrl, redirectPort = 3848 }) => {
+  return new Promise((resolve) => {
+    oneDriveLoginResolve = resolve;
+    oneDriveLoginServer = http.createServer((req, res) => {
+      const parsed = url.parse(req.url, true);
+      if (parsed.pathname === '/callback' && parsed.query && parsed.query.code) {
+        const code = parsed.query.code;
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(
+          '<!DOCTYPE html><html><body><p>登录成功，请关闭此窗口并返回应用。</p><script>setTimeout(() => window.close(), 1500);</script></body></html>'
+        );
+        if (oneDriveLoginResolve) {
+          oneDriveLoginResolve({ success: true, code });
+          oneDriveLoginResolve = null;
+        }
+        if (oneDriveLoginWindow && !oneDriveLoginWindow.isDestroyed()) oneDriveLoginWindow.close();
+        oneDriveLoginWindow = null;
+        oneDriveLoginServer.close();
+        oneDriveLoginServer = null;
+      } else {
+        res.writeHead(404);
+        res.end();
+      }
+    });
+    oneDriveLoginServer.listen(redirectPort, '127.0.0.1', () => {
+      oneDriveLoginWindow = new BrowserWindow({
+        width: 500,
+        height: 700,
+        show: true,
+        webPreferences: { nodeIntegration: false },
+      });
+      oneDriveLoginWindow.loadURL(authUrl);
+      oneDriveLoginWindow.on('closed', () => {
+        if (oneDriveLoginResolve) {
+          oneDriveLoginResolve({ success: false, error: '用户关闭了登录窗口' });
+          oneDriveLoginResolve = null;
+        }
+        if (oneDriveLoginServer) {
+          oneDriveLoginServer.close();
+          oneDriveLoginServer = null;
+        }
+        oneDriveLoginWindow = null;
+      });
+    });
+  });
+});
+
+// 同步加密密码：使用系统安全存储（仅当前设备），便于启动时自动拉取
+const SYNC_PASSWORD_KEY = 'personal-butler-sync-encryption-password';
+
+ipcMain.handle('sync-save-encryption-password', (event, password) => {
+  try {
+    if (!password || typeof password !== 'string') return { success: false, error: '无效密码' };
+    if (!safeStorage.isEncryptionAvailable()) return { success: false, error: '当前系统不支持安全存储' };
+    const encrypted = safeStorage.encryptString(password);
+    const prefs = app.getPath('userData');
+    const file = path.join(prefs, SYNC_PASSWORD_KEY);
+    fs.writeFileSync(file, encrypted);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('sync-get-encryption-password', () => {
+  try {
+    if (!safeStorage.isEncryptionAvailable()) return { success: true, password: null };
+    const file = path.join(app.getPath('userData'), SYNC_PASSWORD_KEY);
+    if (!fs.existsSync(file)) return { success: true, password: null };
+    const encrypted = fs.readFileSync(file);
+    const password = safeStorage.decryptString(encrypted);
+    return { success: true, password };
+  } catch (e) {
+    return { success: false, password: null, error: e.message };
+  }
+});
+
+ipcMain.handle('sync-clear-encryption-password', () => {
+  try {
+    const file = path.join(app.getPath('userData'), SYNC_PASSWORD_KEY);
+    if (fs.existsSync(file)) fs.unlinkSync(file);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
   }
 });

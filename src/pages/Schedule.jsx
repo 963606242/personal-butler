@@ -59,7 +59,7 @@ function Schedule() {
   const [modalVisible, setModalVisible] = useState(false);
   const [configModalVisible, setConfigModalVisible] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(null);
-  const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar' | 'analysis'
+  const [viewMode, setViewMode] = useState('calendar'); // 'calendar' | 'list' | 'analysis'，默认日历视图
   const [analysisRange, setAnalysisRange] = useState('week'); // 'week' | 'month'
   const { t } = useI18n();
   
@@ -354,9 +354,8 @@ function Schedule() {
     },
   ];
 
-  // 日历单元格渲染（重构版 - 融合显示）
-  // 使用新的 cellRender API 替代废弃的 dateCellRender
-  const cellRender = (current, info) => {
+  // 日历单元格渲染：用 fullCellRender 完全自定义，避免 antd 默认再画一遍日期（如 09）造成重复
+  const fullCellRender = (current, info) => {
     // info.type 可以是 'date' 或 'month'
     if (info.type !== 'date') {
       return null; // 月份单元格不需要自定义渲染
@@ -375,29 +374,19 @@ function Schedule() {
     const isToday = dayjs(date).isSame(dayjs(), 'day');
     const isWeekend = value.day() === 0 || value.day() === 6;
     
-    // 构建日期信息行（融合农历、节气、节假日）
-    const infoItems = [];
-    
-    // 农历信息
-    if (showLunar && dateInfo.lunar) {
-      const lunarText = lunarFormat === 'full' 
-        ? dateInfo.lunar.fullText 
-        : lunarFormat === 'simple' 
-          ? dateInfo.lunar.simpleText 
-          : '';
-      if (lunarText) {
-        infoItems.push({
-          text: lunarText,
-          type: 'lunar',
-          color: '#8c8c8c',
-        });
-      }
-    }
-    
-    // 节气和节假日（合并显示）
+    // 农历单独一行；节气+节假日合并为一行 Tag 并排 [情人节] [春节]
+    const lunarText =
+      showLunar && dateInfo.lunar
+        ? lunarFormat === 'full'
+          ? dateInfo.lunar.fullText
+          : lunarFormat === 'simple'
+            ? dateInfo.lunar.simpleText
+            : ''
+        : '';
+    const tagItems = []; // 节气、节假日，用于一行内 Tag 并排
     if (showHoliday && dateInfo.holidays && dateInfo.holidays.length > 0) {
       dateInfo.holidays.forEach((holiday) => {
-        infoItems.push({
+        tagItems.push({
           text: holiday.name,
           type: holiday.type,
           isOffDay: holiday.isOffDay,
@@ -405,203 +394,248 @@ function Schedule() {
       });
     }
     
+    const restLabel = dateInfo.restLabel; // 休 / 班（国务院放假）
+
+    // 底色：休=淡蓝，班=淡红，今日=强调，周末=淡灰，平日=浅灰白
+    let cellBg = '#fafafa';
+    let cellBorder = '1px solid #f0f0f0';
+    let dateColor = '#262626';
+    if (restLabel === '休') {
+      cellBg = '#e6f7ff';
+      cellBorder = '1px solid #bae7ff';
+      dateColor = '#0958d9';
+    } else if (restLabel === '班') {
+      cellBg = '#fff1f0';
+      cellBorder = '1px solid #ffccc7';
+      dateColor = '#cf1322';
+    } else if (isWeekend && showWeekend) {
+      cellBg = '#f5f5f5';
+      dateColor = '#8c8c8c';
+    }
+    if (isToday) {
+      cellBg = restLabel === '休' ? '#bae7ff' : restLabel === '班' ? '#ffccc7' : '#e6f4ff';
+      cellBorder = '2px solid #1677ff';
+      dateColor = '#1677ff';
+    }
+
     return (
-      <div style={{ 
-        minHeight: '80px', 
-        padding: '2px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '2px'
-      }}>
-        {/* 日期和日程数量 */}
-        <div style={{ 
-          fontSize: '13px', 
-          color: isToday ? '#1890ff' : isWeekend && showWeekend ? '#ff4d4f' : '#333',
-          fontWeight: isToday ? 'bold' : 'normal',
+      <div
+        style={{
+          minHeight: '90px',
+          padding: '8px 6px',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '4px',
-          lineHeight: '18px'
-        }}>
-          <span>{value.date()}</span>
-          {daySchedules.length > 0 && (
-            <Badge 
-              count={daySchedules.length} 
-              size="small"
-              style={{ backgroundColor: '#1890ff' }}
-            />
-          )}
-        </div>
-        
-        {/* 融合的信息区域（农历、节气、节假日） */}
-        {infoItems.length > 0 && (
-          <div style={{ 
+          flexDirection: 'column',
+          gap: '4px',
+          borderRadius: '8px',
+          background: cellBg,
+          border: cellBorder,
+          transition: 'border-color .2s, background .2s',
+        }}
+      >
+        {/* 日期行：左为日期，右为休/班小标 + 日程数 */}
+        <div
+          style={{
             display: 'flex',
-            flexDirection: 'column',
-            gap: '2px',
-            marginBottom: '4px'
-          }}>
-            {infoItems.map((item, index) => {
-              // 根据类型决定显示样式
-              let tagColor = 'default';
-              let textColor = '#666';
-              let fontSize = '10px';
-              
-              if (item.type === 'jieqi') {
-                tagColor = 'success';
-                textColor = '#52c41a';
-                fontSize = '10px';
-              } else if (item.isOffDay) {
-                tagColor = 'error';
-                textColor = '#ff4d4f';
-              } else if (item.type === 'lunar') {
-                textColor = item.color || '#8c8c8c';
-              } else {
-                tagColor = 'processing';
-                textColor = '#1890ff';
-              }
-              
-              // 农历信息用普通文本，其他用Tag
-              if (item.type === 'lunar') {
-                return (
-                  <div 
-                    key={index}
-                    style={{ 
-                      fontSize,
-                      color: textColor,
-                      lineHeight: '16px',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}
-                    title={item.text}
-                  >
-                    {item.text}
-                  </div>
-                );
-              } else {
-                return (
-                  <Tag
-                    key={index}
-                    color={tagColor}
-                    style={{ 
-                      fontSize,
-                      margin: 0,
-                      padding: '0 4px',
-                      lineHeight: '16px',
-                      height: '16px',
-                      display: 'inline-block',
-                      maxWidth: '100%',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}
-                    title={item.text}
-                  >
-                    {item.text}
-                  </Tag>
-                );
-              }
-            })}
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            minHeight: '24px',
+            marginBottom: '2px',
+          }}
+        >
+          <span
+            style={{
+              fontSize: '15px',
+              fontWeight: isToday ? 700 : 600,
+              color: dateColor,
+              lineHeight: '24px',
+            }}
+          >
+            {value.date()}
+          </span>
+          <Space size={6} style={{ alignItems: 'center' }}>
+            {restLabel && (
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: restLabel === '休' ? '#0958d9' : '#cf1322',
+                  background: restLabel === '休' ? 'rgba(9,88,217,.14)' : 'rgba(207,19,34,.1)',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  lineHeight: '18px',
+                }}
+              >
+                {restLabel}
+              </span>
+            )}
+            {daySchedules.length > 0 && (
+              <Badge count={daySchedules.length} size="small" style={{ backgroundColor: '#1677ff' }} />
+            )}
+          </Space>
+        </div>
+
+        {/* 农历一行；节气/节假日一行内 Tag 并排 [情人节] [春节] */}
+        {(lunarText || tagItems.length > 0 || daySchedules.length > 0) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '4px' }}>
+            {lunarText && (
+              <div
+                style={{
+                  fontSize: '10px',
+                  color: '#595959',
+                  lineHeight: '16px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+                title={lunarText}
+              >
+                {lunarText}
+              </div>
+            )}
+            {(tagItems.length > 0 || daySchedules.length > 0) && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '4px',
+                  alignItems: 'center',
+                  lineHeight: '20px',
+                }}
+              >
+                {tagItems.map((item, index) => {
+                  const isJieqi = item.type === 'jieqi';
+                  const isOff = item.isOffDay;
+                  const tagStyle = {
+                    margin: 0,
+                    fontSize: '10px',
+                    lineHeight: '18px',
+                    height: '18px',
+                    padding: '0 5px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  };
+                  if (isJieqi) {
+                    return (
+                      <span
+                        key={index}
+                        style={{
+                          ...tagStyle,
+                          color: '#389e0d',
+                          background: 'rgba(56,158,13,.1)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                        }}
+                        title={item.text}
+                      >
+                        {item.text}
+                      </span>
+                    );
+                  }
+                  if (isOff) {
+                    return (
+                      <span
+                        key={index}
+                        style={{
+                          ...tagStyle,
+                          color: '#0958d9',
+                          background: 'rgba(9,88,217,.12)',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                        }}
+                        title={item.text}
+                      >
+                        {item.text}
+                      </span>
+                    );
+                  }
+                  return (
+                    <span
+                      key={index}
+                      style={{
+                        ...tagStyle,
+                        color: '#595959',
+                        background: 'rgba(0,0,0,.06)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                      }}
+                      title={item.text}
+                    >
+                      {item.text}
+                    </span>
+                  );
+                })}
+                {/* 日程用同款 Tag：与节日同一行，不单独占行，文字过长省略 */}
+                {daySchedules.length > 0 && (() => {
+                  const sorted = [...daySchedules].sort((a, b) => (b.priority || 1) - (a.priority || 1));
+                  const top = sorted[0];
+                  const count = daySchedules.length;
+                  const label = count === 1 ? (top.title || '未命名日程') : `${top.title || '未命名日程'} 等${count}项`;
+                  let scheduleTagBg = 'rgba(22,119,255,.1)';
+                  let scheduleTagColor = '#1677ff';
+                  if ((top.priority || 1) === 3) {
+                    scheduleTagBg = 'rgba(255,77,79,.12)';
+                    scheduleTagColor = '#cf1322';
+                  } else if ((top.priority || 1) === 2) {
+                    scheduleTagBg = 'rgba(250,173,20,.15)';
+                    scheduleTagColor = '#d48806';
+                  }
+                  const tooltipContent = (
+                    <div style={{ maxWidth: 320 }}>
+                      {sorted.map((schedule) => {
+                        const startTime = schedule.start_time ? dayjs(schedule.start_time).format('HH:mm') : '';
+                        const endTime = schedule.end_time ? dayjs(schedule.end_time).format('HH:mm') : '';
+                        const timeText = startTime && endTime ? `${startTime}-${endTime}` : startTime || '全天';
+                        return (
+                          <div key={schedule.id} style={{ marginBottom: 8 }}>
+                            <div style={{ fontWeight: 600, marginBottom: 2 }}>{schedule.title || '未命名日程'}</div>
+                            {timeText && <div style={{ fontSize: 12, color: '#666' }}><span style={{ color: '#999' }}>时间：</span>{timeText}</div>}
+                            {schedule.location && <div style={{ fontSize: 12, color: '#666' }}><span style={{ color: '#999' }}>地点：</span>{schedule.location}</div>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                  return (
+                    <Tooltip key="schedule-tag" title={tooltipContent} placement="topLeft">
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        style={{
+                          fontSize: '10px',
+                          lineHeight: '18px',
+                          height: '18px',
+                          padding: '0 5px',
+                          borderRadius: '4px',
+                          border: 'none',
+                          maxWidth: '80px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          color: scheduleTagColor,
+                          background: scheduleTagBg,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          cursor: 'pointer',
+                        }}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleEdit(top); } }}
+                        onClick={() => handleEdit(top)}
+                      >
+                        {label}
+                      </span>
+                    </Tooltip>
+                  );
+                })()}
+              </div>
+            )}
           </div>
         )}
-        
-        {/* 日程列表 */}
-        {daySchedules.map((schedule) => {
-          const startTime = schedule.start_time ? dayjs(schedule.start_time).format('HH:mm') : '';
-          const endTime = schedule.end_time ? dayjs(schedule.end_time).format('HH:mm') : '';
-          const timeText = startTime && endTime ? `${startTime}-${endTime}` : startTime || '全天';
-          
-          const tooltipContent = (
-            <div style={{ maxWidth: '300px' }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>
-                {schedule.title}
-              </div>
-              {timeText && (
-                <div style={{ marginBottom: '4px' }}>
-                  <span style={{ color: '#999' }}>时间：</span>
-                  {timeText}
-                </div>
-              )}
-              {schedule.location && (
-                <div style={{ marginBottom: '4px' }}>
-                  <span style={{ color: '#999' }}>地点：</span>
-                  {schedule.location}
-                </div>
-              )}
-              {schedule.notes && (
-                <div style={{ marginBottom: '4px' }}>
-                  <span style={{ color: '#999' }}>备注：</span>
-                  {schedule.notes}
-                </div>
-              )}
-              {schedule.tags && schedule.tags.length > 0 && (
-                <div style={{ marginTop: '8px' }}>
-                  <Space size={4}>
-                    {schedule.tags.map((tag, idx) => (
-                      <Tag key={idx} size="small">{tag}</Tag>
-                    ))}
-                  </Space>
-                </div>
-              )}
-            </div>
-          );
-
-          return (
-            <Tooltip key={schedule.id} title={tooltipContent} placement="topLeft">
-              <div 
-                style={{ 
-                  fontSize: '11px', 
-                  marginBottom: '2px',
-                  cursor: 'pointer',
-                  padding: '2px 4px',
-                  borderRadius: '2px',
-                  backgroundColor: schedule.priority === 3 
-                    ? '#fff1f0' 
-                    : schedule.priority === 2 
-                      ? '#fff7e6' 
-                      : '#f0f0f0',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = schedule.priority === 3 
-                    ? '#ffccc7' 
-                    : schedule.priority === 2 
-                      ? '#ffe7ba' 
-                      : '#d9d9d9';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = schedule.priority === 3 
-                    ? '#fff1f0' 
-                    : schedule.priority === 2 
-                      ? '#fff7e6' 
-                      : '#f0f0f0';
-                }}
-                onClick={() => handleEdit(schedule)}
-              >
-                <Badge
-                  status={schedule.priority === 3 ? 'error' : schedule.priority === 2 ? 'warning' : 'default'}
-                  text={
-                    <span style={{ 
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      display: 'block',
-                      maxWidth: '100%'
-                    }}>
-                      {schedule.title}
-                    </span>
-                  }
-                />
-              </div>
-            </Tooltip>
-          );
-        })}
       </div>
     );
   };
-  
 
   // 如果用户未初始化，显示加载状态而不是错误
   if (!isInitialized) {
@@ -648,29 +682,12 @@ function Schedule() {
           onChange={setViewMode}
           items={[
             {
-              key: 'list',
-              label: t('schedule.listView'),
-              children: (
-                <Table
-                  columns={columns}
-                  dataSource={schedules}
-                  rowKey="id"
-                  loading={loading}
-                  pagination={{
-                    pageSize: 10,
-                    showSizeChanger: true,
-                    showTotal: (total) => `共 ${total} 条日程`,
-                  }}
-                />
-              ),
-            },
-            {
               key: 'calendar',
               label: t('schedule.calendarView'),
               children: (
                 <>
                   <div style={{ marginBottom: 16 }}>
-                    <Space>
+                    <Space wrap>
                       {showLunar && (
                         <Tag color="blue">已启用农历显示</Tag>
                       )}
@@ -680,7 +697,7 @@ function Schedule() {
                     </Space>
                   </div>
                   <Calendar
-                    cellRender={cellRender}
+                    fullCellRender={fullCellRender}
                     onSelect={(date) => {
                       setSelectedDate(date.toDate());
                       const daySchedules = getSchedulesByDate(date.toDate());
@@ -701,6 +718,23 @@ function Schedule() {
                     }}
                   />
                 </>
+              ),
+            },
+            {
+              key: 'list',
+              label: t('schedule.listView'),
+              children: (
+                <Table
+                  columns={columns}
+                  dataSource={schedules}
+                  rowKey="id"
+                  loading={loading}
+                  pagination={{
+                    pageSize: 10,
+                    showSizeChanger: true,
+                    showTotal: (total) => `共 ${total} 条日程`,
+                  }}
+                />
               ),
             },
             {

@@ -29,6 +29,7 @@
         "schedule": "日程管理",
         "habits": "习惯追踪",
         "countdown": "倒数纪念日",
+        "diary": "日记小记",
         "equipment": "装备管理",
         "clothing": "服装管理",
         "weather": "天气与搭配",
@@ -38,6 +39,13 @@
         "settings": "设置"
       }
     }
+  },
+  "diary": {
+    "pageTitle": "日记小记",
+    "newEntry": "新建日记",
+    "editEntry": "编辑日记",
+    "deleteConfirm": "确定删除这条日记吗？",
+    "noEntries": "这一天还没有记录，点击「新建日记」开始记录吧"
   },
   "fun": {
     "pageTitle": "趣味工具",

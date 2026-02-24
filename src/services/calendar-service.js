@@ -361,6 +361,14 @@ class CalendarService {
       }
     }
 
+    // 国务院放假：休/班 标识（对接 API 数据，便于日历展示）
+    dateInfo.restLabel = null;
+    if (dateInfo.holidays && dateInfo.holidays.some((h) => h.isOffDay)) {
+      dateInfo.restLabel = '休';
+    } else if (dateInfo.isWorkDay === true && (d.day() === 0 || d.day() === 6)) {
+      dateInfo.restLabel = '班'; // 调休补班
+    }
+
     return dateInfo;
   }
 

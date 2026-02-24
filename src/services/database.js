@@ -1,6 +1,7 @@
-// 数据库服务 - 渲染进程版本（通过平台 API：Electron IPC 或 Web IndexedDB）
+// 数据库服务 - 渲染进程版本（通过平台 API：Electron IPC 或 Web sql.js + IndexedDB）
 import { getLogger } from './logger-client';
 import { isElectron, dbInit as platformDbInit, dbQuery as platformDbQuery, dbExecute as platformDbExecute } from '../platform';
+import * as webDb from './database-web-sqlite';
 
 class DatabaseService {
   constructor() {
@@ -40,8 +41,8 @@ class DatabaseService {
   }
 
   async initIndexedDB() {
-    // Web环境使用IndexedDB（后续实现）
-    this.logger.log('DB-Client', 'Web环境，使用IndexedDB');
+    this.logger.log('DB-Client', 'Web 环境，使用 sql.js + IndexedDB');
+    await webDb.initWebDb();
   }
 
   // 通用查询方法
@@ -114,16 +115,14 @@ class DatabaseService {
     }
   }
 
-  // IndexedDB查询（Web环境）
+  // Web 环境：sql.js 查询
   async queryIndexedDB(sql, params) {
-    // TODO: 实现IndexedDB查询
-    throw new Error('IndexedDB查询未实现');
+    return webDb.query(sql, params ?? []);
   }
 
-  // IndexedDB执行（Web环境）
+  // Web 环境：sql.js 执行并持久化到 IndexedDB
   async executeIndexedDB(sql, params) {
-    // TODO: 实现IndexedDB执行
-    throw new Error('IndexedDB执行未实现');
+    return webDb.execute(sql, params ?? []);
   }
 }
 

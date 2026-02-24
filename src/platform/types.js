@@ -28,6 +28,10 @@
  * @property {(payload: { externalId: string, title: string, notes?: string, startAt: number, endAt: number, location?: string, allDay?: boolean }) => Promise<{ success: boolean, systemId?: string, error?: string }>} upsertCalendarEvent - 写入系统日程（iOS Calendar / 其他平台可占位）
  * @property {(systemId: string) => Promise<{ success: boolean, error?: string }>} deleteCalendarEvent - 删除系统日程
  * @property {() => Promise<{ success: boolean, filePath?: string, canceled?: boolean } | null>} selectImageFile - 选择图片文件；Electron 返回 { success, filePath } 或 { canceled }，Web 返回 null
+ * @property {(opts?: { accept?: 'image' | 'video' | 'all' }) => Promise<{ success: boolean, filePath?: string, canceled?: boolean } | null>} selectMediaFile - 选择媒体文件（图片/视频）；Electron 返回 { success, filePath }，Web 返回 null
+ * @property {() => Promise<{ success: boolean, error?: string }>} startAudioRecording - 开始录音（Electron: 保存到临时文件；Web: MediaRecorder API）
+ * @property {() => Promise<{ success: boolean, filePath?: string, error?: string }>} stopAudioRecording - 停止录音并返回文件路径（Electron: 返回保存路径；Web: 返回 Blob URL 或 data URL）
+ * @property {() => Promise<{ success: boolean, error?: string }>} cancelAudioRecording - 取消当前录音
  *
  * @property {() => Promise<{ success?: boolean, [key: string]: any }>} apiBridgeRestart - 重启 API 桥服务
  * @property {() => Promise<{ success: boolean, content?: string }>} readApiBridgeDoc - 读取 API 说明文档

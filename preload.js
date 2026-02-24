@@ -17,6 +17,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showReminderNotification: (payload) => ipcRenderer.invoke('show-reminder-notification', payload),
   // 图片文件选择
   selectImageFile: () => ipcRenderer.invoke('select-image-file'),
+  // 媒体文件选择（图片/视频）
+  selectMediaFile: (opts) => ipcRenderer.invoke('select-media-file', opts),
+  // 录音
+  startAudioRecording: () => ipcRenderer.invoke('start-audio-recording'),
+  stopAudioRecording: () => ipcRenderer.invoke('stop-audio-recording'),
+  cancelAudioRecording: () => ipcRenderer.invoke('cancel-audio-recording'),
+  // 录音转写（OpenAI Whisper），参数 { base64, apiKey }
+  transcribeAudio: (opts) => ipcRenderer.invoke('transcribe-audio', opts),
   // 主进程 GET 请求（绕过代理，用于新闻 API）
   fetchUrl: (url) => ipcRenderer.invoke('fetch-url', url),
   // 主进程 POST JSON（绕过代理，用于 AI API）
@@ -24,4 +32,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 「可被 AI 调用」本地 API：保存设置后重启服务
   apiBridgeRestart: () => ipcRenderer.invoke('api-bridge-restart'),
   readApiBridgeDoc: () => ipcRenderer.invoke('read-api-bridge-doc'),
+  // 同步：导出/导入全量数据（主进程执行）
+  syncExportData: () => ipcRenderer.invoke('sync-export-data'),
+  syncImportData: (payload) => ipcRenderer.invoke('sync-import-data', payload),
+  // OAuth 登录（OneDrive/Google Drive/Dropbox 等）：主进程打开登录窗口并监听 redirect，返回 code
+  syncOpenOAuthLogin: (opts) => ipcRenderer.invoke('sync-open-oauth-login', opts),
+  syncOnedriveOpenLogin: (opts) => ipcRenderer.invoke('sync-open-oauth-login', opts),
+  syncSaveEncryptionPassword: (pwd) => ipcRenderer.invoke('sync-save-encryption-password', pwd),
+  syncGetEncryptionPassword: () => ipcRenderer.invoke('sync-get-encryption-password'),
+  syncClearEncryptionPassword: () => ipcRenderer.invoke('sync-clear-encryption-password'),
 });

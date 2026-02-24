@@ -19,6 +19,7 @@ import {
   ExperimentOutlined,
   AppstoreOutlined,
   RightOutlined,
+  BookOutlined,
 } from '@ant-design/icons';
 import useUserStore from '../../stores/userStore';
 import useScheduleStore from '../../stores/scheduleStore';
@@ -31,11 +32,12 @@ import { getLogger } from '../../services/logger-client';
 import { startReminderPolling, stopReminderPolling } from '../../services/reminder-service';
 import { startCountdownReminderPolling, stopCountdownReminderPolling } from '../../services/countdown-reminder-service';
 import ReminderModal from '../Reminder/ReminderModal';
-import { showReminderNotification } from '../../platform';
+import { showReminderNotification, isElectron, isCapacitor } from '../../platform';
+import * as syncService from '../../services/sync/sync-service';
 
 const logger = getLogger();
 
-const { Header, Sider, Content } = Layout;
+const { Sider, Content } = Layout;
 
 function MainLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -58,6 +60,10 @@ function MainLayout({ children }) {
       try {
         logger.log('MainLayout', '开始初始化...');
         await Promise.all([loadSettings(), !isInitialized ? loadUser() : Promise.resolve()]);
+        if (isElectron() || isCapacitor()) {
+          syncService.runSyncOnStartup().catch(() => {});
+          syncService.startSyncInterval();
+        }
         logger.log('MainLayout', '初始化完成');
       } catch (error) {
         logger.error('MainLayout', '初始化失败:', error);
@@ -189,7 +195,6 @@ function MainLayout({ children }) {
   const siderWidth = collapsed ? 80 : 200;
   const contentMargin = isMobile ? 12 : isTablet ? 16 : 24;
   const contentPadding = isMobile ? 12 : isTablet ? 16 : 24;
-  const headerPadding = isMobile ? 12 : 24;
 
   const menuGroupItems = [
     {
@@ -207,6 +212,7 @@ function MainLayout({ children }) {
         { key: '/schedule', icon: <CalendarOutlined />, label: t('layout.sidebar.menu.schedule', '日程管理') },
         { key: '/habits', icon: <CheckCircleOutlined />, label: t('layout.sidebar.menu.habits', '习惯追踪') },
         { key: '/countdown', icon: <GiftOutlined />, label: t('layout.sidebar.menu.countdown', '倒数纪念日') },
+        { key: '/diary', icon: <BookOutlined />, label: t('layout.sidebar.menu.diary', '日记小记') },
       ],
     },
     {
@@ -242,12 +248,12 @@ function MainLayout({ children }) {
     },
   ];
 
-  // 移动端底部 Tab：首页、日程、习惯、AI、更多
+  // 移动端底部 Tab：首页、日程、习惯、日记、更多
   const mobileTabs = [
     { path: '/', label: t('layout.sidebar.menu.dashboard', '仪表盘'), icon: DashboardOutlined },
     { path: '/schedule', label: t('layout.sidebar.menu.schedule', '日程管理'), icon: CalendarOutlined },
     { path: '/habits', label: t('layout.sidebar.menu.habits', '习惯追踪'), icon: CheckCircleOutlined },
-    { path: '/ai', label: t('layout.sidebar.menu.ai', 'AI助手'), icon: RobotOutlined },
+    { path: '/diary', label: t('layout.sidebar.menu.diary', '日记小记'), icon: BookOutlined },
     { path: 'more', label: t('layout.mobile.more', '更多'), icon: AppstoreOutlined },
   ];
 
@@ -255,6 +261,7 @@ function MainLayout({ children }) {
   const moreSheetItems = [
     { path: '/profile', icon: UserOutlined, label: t('layout.sidebar.menu.profile', '个人信息') },
     { path: '/countdown', icon: GiftOutlined, label: t('layout.sidebar.menu.countdown', '倒数纪念日') },
+    { path: '/ai', icon: RobotOutlined, label: t('layout.sidebar.menu.ai', 'AI助手') },
     { path: '/equipment', icon: ToolOutlined, label: t('layout.sidebar.menu.equipment', '装备管理') },
     { path: '/clothing', icon: SkinOutlined, label: t('layout.sidebar.menu.clothing', '服装管理') },
     { path: '/weather', icon: CloudOutlined, label: t('layout.sidebar.menu.weather', '天气与搭配') },
@@ -322,7 +329,7 @@ function MainLayout({ children }) {
           }}
         >
           <div className="sidebar-inner" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div className="sidebar-header" style={{ height: 64, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', gap: 8, borderBottom: `1px solid ${token.colorBorderSecondary}` }}>
+            <div className="sidebar-header" style={{ height: 52, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 12px', gap: 8 }}>
               <span style={{ fontSize: 18, fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {collapsed ? t('layout.sidebar.titleShort', 'PB') : t('layout.header.title', 'Personal Butler')}
               </span>
@@ -358,22 +365,6 @@ function MainLayout({ children }) {
           flexDirection: 'column',
         }}
       >
-        <Header
-          className="main-header"
-          style={{
-            flexShrink: 0,
-            background: token.colorBgContainer,
-            padding: `0 ${headerPadding}px`,
-            borderBottom: `1px solid ${token.colorBorderSecondary}`,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <h1 style={{ margin: 0, fontSize: isMobile ? 18 : 20, fontWeight: 500, color: token.colorText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-            {t('layout.header.title', '个人管家')}
-          </h1>
-        </Header>
         <Content
           className={`main-content ${isMobile ? 'main-content-mobile' : ''}`}
           style={{

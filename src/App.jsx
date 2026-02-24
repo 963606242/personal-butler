@@ -13,6 +13,7 @@ import Weather from './pages/Weather';
 import News from './pages/News';
 import AIChat from './pages/AIChat';
 import Countdown from './pages/Countdown';
+import Diary from './pages/Diary';
 import Settings from './pages/Settings';
 import FunTools from './pages/FunTools';
 import { OnboardingProvider } from './context/OnboardingContext';
@@ -73,6 +74,7 @@ function App() {
             <Route path="/news" element={<News />} />
             <Route path="/ai" element={<AIChat />} />
             <Route path="/countdown" element={<Countdown />} />
+            <Route path="/diary" element={<Diary />} />
             <Route path="/fun" element={<FunTools />} />
             <Route path="/settings" element={<Settings />} />
               </Routes>

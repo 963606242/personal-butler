@@ -100,9 +100,50 @@ export const upsertCalendarEvent = () => notSupported('upsertCalendarEvent'); //
 export const deleteCalendarEvent = () => notSupported('deleteCalendarEvent');
 
 export const selectImageFile = () => Promise.resolve(null); // iOS 建议用相册/相机插件，后续再接
+export const selectMediaFile = async (opts) => {
+  const plugins = getPlugins();
+  // 可用 @capacitor/camera 或 @capacitor/filesystem + 文件选择器
+  return Promise.resolve(null);
+};
+
+export const startAudioRecording = async () => {
+  const plugins = getPlugins();
+  // 可用 @capacitor-community/media 或自定义插件
+  return { success: false, error: '录音功能需要 Capacitor 插件支持' };
+};
+export const stopAudioRecording = async () => ({ success: false, error: '录音功能需要 Capacitor 插件支持' });
+export const cancelAudioRecording = async () => ({ success: true });
 
 export const apiBridgeRestart = () => Promise.resolve({ success: false });
 export const readApiBridgeDoc = () => Promise.resolve({ success: false, content: '' });
+
+export const syncExportData = () => Promise.resolve({ success: false, error: '同步由渲染进程 Web 层处理' });
+export const syncImportData = () => Promise.resolve({ success: false, error: '同步由渲染进程 Web 层处理' });
+export const syncOpenOAuthLogin = () => Promise.resolve({ success: false, error: '同步仅支持 Electron 桌面版' });
+export const syncOnedriveOpenLogin = () => Promise.resolve({ success: false, error: '同步仅支持 Electron 桌面版' });
+
+const SYNC_PASSWORD_KEY = 'pb_sync_encryption_password';
+export const syncSaveEncryptionPassword = (password) => {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(SYNC_PASSWORD_KEY, password);
+    return Promise.resolve({ success: true });
+  } catch (e) {
+    return Promise.resolve({ success: false });
+  }
+};
+export const syncGetEncryptionPassword = () =>
+  Promise.resolve({
+    success: typeof localStorage !== 'undefined' && !!localStorage.getItem(SYNC_PASSWORD_KEY),
+    password: typeof localStorage !== 'undefined' ? localStorage.getItem(SYNC_PASSWORD_KEY) : null,
+  });
+export const syncClearEncryptionPassword = () => {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(SYNC_PASSWORD_KEY);
+    return Promise.resolve({ success: true });
+  } catch (e) {
+    return Promise.resolve({ success: false });
+  }
+};
 
 export const isElectron = () => false;
 

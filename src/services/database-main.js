@@ -73,6 +73,7 @@ class DatabaseService {
       this.migrateHabitsSchema();
       this.migrateUserProfilesSchema();
       this.migrateCountdownSchema();
+      this.migrateDiarySchema();
 
       this.initialized = true;
       console.log('[DB] ✅ 数据库初始化成功:', this.dbPath);
@@ -240,6 +241,30 @@ class DatabaseService {
       )
     `);
 
+    // 日记表（image_analysis/audio_transcript 供 AI 分析后搜索）
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS diary_entries (
+        id TEXT PRIMARY KEY,
+        user_id TEXT REFERENCES users(id),
+        date INTEGER NOT NULL,
+        title TEXT,
+        content TEXT,
+        images TEXT,
+        audio_path TEXT,
+        video_path TEXT,
+        mood TEXT,
+        tags TEXT,
+        location TEXT,
+        weather TEXT,
+        image_analysis TEXT,
+        audio_transcript TEXT,
+        created_at INTEGER,
+        updated_at INTEGER
+      )
+    `);
+    // 日记日期索引（便于按日期查询）
+    this.db.exec(`CREATE INDEX IF NOT EXISTS idx_diary_date ON diary_entries(user_id, date DESC)`);
+
     // AI 聊天记录表
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS ai_chat_messages (
@@ -406,6 +431,103 @@ class DatabaseService {
       }
     } catch (e) {
       console.warn('[DB] countdown_events 迁移跳过或失败:', e.message);
+    }
+  }
+
+  migrateDiarySchema() {
+    if (!this.db) return;
+    try {
+      const info = this.db.prepare('PRAGMA table_info(diary_entries)').all();
+      const cols = info.map((c) => c.name);
+      if (!cols.includes('image_analysis')) {
+        this.db.exec('ALTER TABLE diary_entries ADD COLUMN image_analysis TEXT');
+        console.log('[DB] diary_entries 表已添加 image_analysis 列');
+      }
+      if (!cols.includes('audio_transcript')) {
+        this.db.exec('ALTER TABLE diary_entries ADD COLUMN audio_transcript TEXT');
+        console.log('[DB] diary_entries 表已添加 audio_transcript 列');
+      }
+    } catch (e) {
+      console.warn('[DB] diary_entries 迁移跳过或失败:', e.message);
+    }
+  }
+
+  /**
+   * 导出所有同步用表为 JSON 对象（供加密后上传云盘）
+   * 表顺序保持依赖关系：users 优先，其余按外键顺序
+   */
+  exportForSync() {
+    if (!this.db || !this.initialized) throw new Error('数据库未初始化');
+    const tables = [
+      'users',
+      'user_profiles',
+      'schedules',
+      'habits',
+      'habit_logs',
+      'equipment',
+      'clothing',
+      'outfits',
+      'settings',
+      'diary_entries',
+      'ai_chat_messages',
+      'countdown_events',
+      'cache',
+    ];
+    const out = { version: 1, exportedAt: Date.now(), data: {} };
+    for (const table of tables) {
+      try {
+        const rows = this.db.prepare(`SELECT * FROM ${table}`).all();
+        out.data[table] = rows;
+      } catch (e) {
+        console.warn('[DB] exportForSync 跳过表', table, e.message);
+        out.data[table] = [];
+      }
+    }
+    return out;
+  }
+
+  /**
+   * 从同步包导入数据（先清空再插入，导入期间关闭外键）
+   */
+  importFromSync(payload) {
+    if (!this.db || !this.initialized) throw new Error('数据库未初始化');
+    if (!payload || !payload.data || typeof payload.data !== 'object') throw new Error('无效的同步数据');
+    const tables = [
+      'cache',
+      'countdown_events',
+      'ai_chat_messages',
+      'diary_entries',
+      'settings',
+      'outfits',
+      'clothing',
+      'equipment',
+      'habit_logs',
+      'habits',
+      'schedules',
+      'user_profiles',
+      'users',
+    ];
+    this.db.pragma('foreign_keys = OFF');
+    try {
+      for (const table of tables) {
+        const rows = payload.data[table];
+        if (!Array.isArray(rows) || rows.length === 0) continue;
+        const cols = Object.keys(rows[0]).filter((k) => k !== undefined);
+        if (cols.length === 0) continue;
+        const placeholders = cols.map(() => '?').join(', ');
+        const colList = cols.join(', ');
+        this.db.prepare(`DELETE FROM ${table}`).run();
+        const stmt = this.db.prepare(
+          `INSERT OR REPLACE INTO ${table} (${colList}) VALUES (${placeholders})`
+        );
+        for (const row of rows) {
+          const vals = cols.map((c) => row[c] ?? null);
+          stmt.run(vals);
+        }
+        console.log('[DB] importFromSync 导入表', table, rows.length, '条');
+      }
+    } finally {
+      this.db.pragma('foreign_keys = ON');
     }
   }
 

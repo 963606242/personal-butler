@@ -51,8 +51,76 @@ export const deleteTodo = () => notSupported('deleteTodo');
 export const upsertCalendarEvent = () => notSupported('upsertCalendarEvent');
 export const deleteCalendarEvent = () => notSupported('deleteCalendarEvent');
 export const selectImageFile = () => Promise.resolve(null); // Web 需用 <input type="file">，由调用方实现
+export const selectMediaFile = () => Promise.resolve(null); // Web 需用 <input type="file" accept="image/*,video/*">，由调用方实现
+
+// Web 录音：使用 MediaRecorder API（需浏览器支持）
+let webMediaRecorder = null;
+let webAudioChunks = [];
+export const startAudioRecording = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    webMediaRecorder = new MediaRecorder(stream);
+    webAudioChunks = [];
+    webMediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) webAudioChunks.push(e.data);
+    };
+    webMediaRecorder.start();
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e?.message || '录音失败' };
+  }
+};
+export const stopAudioRecording = async () => {
+  if (!webMediaRecorder) return { success: false, error: '未开始录音' };
+  return new Promise((resolve) => {
+    webMediaRecorder.onstop = () => {
+      const blob = new Blob(webAudioChunks, { type: 'audio/webm' });
+      const url = URL.createObjectURL(blob);
+      webMediaRecorder.stream.getTracks().forEach((t) => t.stop());
+      webMediaRecorder = null;
+      webAudioChunks = [];
+      resolve({ success: true, filePath: url }); // Web 返回 Blob URL
+    };
+    webMediaRecorder.stop();
+  });
+};
+export const cancelAudioRecording = async () => {
+  if (!webMediaRecorder) return { success: false };
+  webMediaRecorder.stream.getTracks().forEach((t) => t.stop());
+  webMediaRecorder = null;
+  webAudioChunks = [];
+  return { success: true };
+};
 
 export const apiBridgeRestart = () => Promise.resolve({ success: false });
 export const readApiBridgeDoc = () => Promise.resolve({ success: false, content: '' });
+
+export const syncExportData = () => Promise.resolve({ success: false, error: '同步由渲染进程 Web 层处理' });
+export const syncImportData = () => Promise.resolve({ success: false, error: '同步由渲染进程 Web 层处理' });
+export const syncOpenOAuthLogin = () => Promise.resolve({ success: false, error: '同步仅支持 Electron 桌面版' });
+export const syncOnedriveOpenLogin = () => Promise.resolve({ success: false, error: '同步仅支持 Electron 桌面版' });
+
+const SYNC_PASSWORD_KEY = 'pb_sync_encryption_password';
+export const syncSaveEncryptionPassword = (password) => {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(SYNC_PASSWORD_KEY, password);
+    return Promise.resolve({ success: true });
+  } catch (e) {
+    return Promise.resolve({ success: false });
+  }
+};
+export const syncGetEncryptionPassword = () =>
+  Promise.resolve({
+    success: typeof localStorage !== 'undefined' && !!localStorage.getItem(SYNC_PASSWORD_KEY),
+    password: typeof localStorage !== 'undefined' ? localStorage.getItem(SYNC_PASSWORD_KEY) : null,
+  });
+export const syncClearEncryptionPassword = () => {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(SYNC_PASSWORD_KEY);
+    return Promise.resolve({ success: true });
+  } catch (e) {
+    return Promise.resolve({ success: false });
+  }
+};
 
 export const isElectron = () => false;

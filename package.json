@@ -10,6 +10,9 @@
     "build": "npm run build:react && npm run build:electron",
     "build:react": "vite build",
     "build:electron": "cross-env ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ electron-builder",
+    "build:ios": "npm run build:react && npx cap sync ios",
+    "cap:sync": "npx cap sync",
+    "cap:ios": "npx cap open ios",
     "preview": "vite preview",
     "postinstall": "electron-builder install-app-deps || electron-rebuild -f -w better-sqlite3",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
@@ -28,6 +31,9 @@
   "dependencies": {
     "@ant-design/charts": "^2.6.7",
     "@ant-design/icons": "^5.2.6",
+    "@capacitor/cli": "^8.1.0",
+    "@capacitor/core": "^8.1.0",
+    "@capacitor/ios": "^8.1.0",
     "antd": "^5.11.5",
     "axios": "^1.6.2",
     "better-sqlite3": "^9.2.2",
@@ -41,6 +47,7 @@
     "react-router-dom": "^6.20.0",
     "recharts": "^2.10.3",
     "relationship-ts": "^0.1.1",
+    "sql.js": "^1.14.0",
     "zustand": "^4.5.7"
   },
   "devDependencies": {
@@ -71,7 +78,10 @@
       "src/services/ai-bridge-server.js",
       "src/services/logger.js"
     ],
-    "electronLanguages": ["en-US", "zh-CN"],
+    "electronLanguages": [
+      "en-US",
+      "zh-CN"
+    ],
     "win": {
       "target": "dir",
       "signAndEditExecutable": false

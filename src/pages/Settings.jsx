@@ -27,6 +27,7 @@ import {
   RobotOutlined,
   DatabaseOutlined,
   BookOutlined,
+  CloudSyncOutlined,
 } from '@ant-design/icons';
 import useSettingsStore from '../stores/settingsStore';
 import useUserStore from '../stores/userStore';
@@ -41,7 +42,9 @@ import { useOnboarding } from '../context/OnboardingContext';
 import { useI18n } from '../context/I18nContext';
 import { API_KEY_CONFIGS } from '../constants/settings-api-links';
 import { resetAppData } from '../services/data-reset-service';
-import { getDatabasePath, apiBridgeRestart, readApiBridgeDoc, isElectron } from '../platform';
+import { getDatabasePath, apiBridgeRestart, readApiBridgeDoc, isElectron, isCapacitor, syncSaveEncryptionPassword, syncClearEncryptionPassword } from '../platform';
+import * as syncService from '../services/sync/sync-service';
+import { HAS_BUILTIN_ONEDRIVE, BUILTIN_ONEDRIVE_CLIENT_ID } from '../constants/sync';
 import dayjs from 'dayjs';
 import ReactMarkdown from 'react-markdown';
 import './Settings.css';
@@ -69,6 +72,17 @@ export default function Settings() {
   const [dailyReminderEnabled, setDailyReminderEnabled] = useState(false);
   const [dailyReminderTime, setDailyReminderTime] = useState('08:00');
   const [databasePath, setDatabasePath] = useState('');
+  const [syncEnabled, setSyncEnabled] = useState(false);
+  const [syncProvider, setSyncProvider] = useState('onedrive');
+  const [syncClientId, setSyncClientId] = useState('');
+  const [syncWebdavUrl, setSyncWebdavUrl] = useState('');
+  const [syncWebdavUser, setSyncWebdavUser] = useState('');
+  const [syncWebdavPassword, setSyncWebdavPassword] = useState('');
+  const [syncPassword, setSyncPassword] = useState('');
+  const [syncRememberPassword, setSyncRememberPassword] = useState(false);
+  const [syncLastSyncAt, setSyncLastSyncAt] = useState('');
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [oauthConnecting, setOauthConnecting] = useState(false);
   const { loaded, loadFromDb, setMany, set, get } = useSettingsStore();
   const currentUser = useUserStore((s) => s.currentUser);
   const { open: openOnboarding } = useOnboarding();
@@ -128,6 +142,18 @@ export default function Settings() {
       getDatabasePath().then(setDatabasePath).catch(() => {});
     }
   }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    setSyncEnabled((get('sync_enabled') || '') === '1');
+    setSyncProvider(get('sync_provider') || 'onedrive');
+    setSyncClientId(get('sync_onedrive_client_id') || get('sync_googledrive_client_id') || get('sync_dropbox_client_id') || '');
+    setSyncWebdavUrl(get('sync_webdav_url') || '');
+    setSyncWebdavUser(get('sync_webdav_user') || '');
+    setSyncWebdavPassword(get('sync_webdav_password') || '');
+    const last = get('sync_last_sync_at');
+    setSyncLastSyncAt(last ? dayjs(parseInt(last, 10)).format('YYYY-MM-DD HH:mm') : '');
+  }, [loaded, get]);
 
   const onFinish = async (v) => {
     if (!v || typeof v !== 'object') return;
@@ -202,6 +228,95 @@ export default function Settings() {
   const generateApiKey = () => {
     const part = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
     setApiBridgeSecret(part() + part());
+  };
+
+  const handleSyncEnabledChange = async (checked) => {
+    setSyncEnabled(checked);
+    await set('sync_enabled', checked ? '1' : '0');
+    if (checked) syncService.startSyncInterval();
+    else syncService.stopSyncInterval();
+    message.success(t('settings.messages.saveSuccess', '设置已保存'));
+  };
+
+  const handleConnectOAuth = async () => {
+    const keyMap = { onedrive: 'sync_onedrive_client_id', googledrive: 'sync_googledrive_client_id', dropbox: 'sync_dropbox_client_id' };
+    const key = keyMap[syncProvider];
+    let clientId = (syncClientId || '').trim() || (key ? get(key) : '') || '';
+    if (syncProvider === 'onedrive' && !clientId && HAS_BUILTIN_ONEDRIVE) clientId = BUILTIN_ONEDRIVE_CLIENT_ID;
+    if (syncProvider !== 'webdav' && !clientId) {
+      message.warning('请先填写当前同步目标的客户端 ID / App key');
+      return;
+    }
+    if (key && clientId) await set(key, clientId);
+    setOauthConnecting(true);
+    try {
+      const loginRes = await syncService.openLoginWindow(clientId);
+      if (!loginRes.success || !loginRes.code) {
+        message.error(loginRes.error || '登录取消或失败');
+        return;
+      }
+      const tokenRes = await syncService.exchangeCodeForTokens(clientId, loginRes.code, loginRes.codeVerifier);
+      if (!tokenRes.success) {
+        message.error(tokenRes.error || '获取令牌失败');
+        return;
+      }
+      message.success('已连接');
+    } catch (e) {
+      message.error(e?.message || '连接失败');
+    } finally {
+      setOauthConnecting(false);
+    }
+  };
+
+  const handleSyncProviderChange = async (provider) => {
+    setSyncProvider(provider);
+    await set('sync_provider', provider);
+    const cid = provider === 'onedrive' ? get('sync_onedrive_client_id') : provider === 'googledrive' ? get('sync_googledrive_client_id') : provider === 'dropbox' ? get('sync_dropbox_client_id') : '';
+    setSyncClientId(cid || '');
+  };
+
+  const handlePushSync = async () => {
+    if (!syncPassword.trim()) {
+      message.warning('请填写同步加密密码');
+      return;
+    }
+    setSyncLoading(true);
+    try {
+      const res = await syncService.pushSync(syncPassword);
+      if (res.success) {
+        message.success('已上传到云端');
+        setSyncLastSyncAt(dayjs().format('YYYY-MM-DD HH:mm'));
+        if (syncRememberPassword) {
+          const r = await syncSaveEncryptionPassword(syncPassword);
+          if (!r.success) message.info('无法在此设备保存密码：' + (r.error || ''));
+        }
+      } else message.error(res.error || '上传失败');
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
+  const handlePullSync = async () => {
+    const pwd = syncPassword.trim() || null;
+    if (!pwd) {
+      message.warning('请填写同步加密密码（与上传时一致），或勾选「在此设备记住密码」后先上传一次');
+      return;
+    }
+    setSyncLoading(true);
+    try {
+      const res = await syncService.pullSync(pwd);
+      if (res.success) {
+        message.success('已从云端拉取并覆盖本地数据');
+        setSyncLastSyncAt(dayjs().format('YYYY-MM-DD HH:mm'));
+        if (syncRememberPassword) {
+          const r = await syncSaveEncryptionPassword(pwd);
+          if (!r.success) message.info('无法在此设备保存密码：' + (r.error || ''));
+        }
+        window.location.reload();
+      } else message.error(res.error || '拉取失败');
+    } finally {
+      setSyncLoading(false);
+    }
   };
 
   const isKeyConfigured = (key) => {
@@ -507,6 +622,175 @@ export default function Settings() {
         </Card>
       ),
     },
+    ...((isElectron() || isCapacitor())
+      ? [
+          {
+            key: 'sync',
+            label: (
+              <Space>
+                <CloudSyncOutlined />
+                <span>云端同步</span>
+              </Space>
+            ),
+            children: (
+              <Card size="small" type="inner">
+                <Alert
+                  type="info"
+                  showIcon
+                  message="本地优先，加密同步到您的网盘"
+                  description="数据仅存本地与您选择的网盘，无需在本应用注册账号。加密后上传到 OneDrive / Google Drive / Dropbox / WebDAV，其他设备（如 Windows / iPad）配置相同网盘与加密密码即可拉取。打开应用与定时（约 15 分钟）会自动拉取（需已「记住密码」）。"
+                  style={{ marginBottom: 16 }}
+                />
+                <Form.Item label="启用同步">
+                  <Switch checked={syncEnabled} onChange={handleSyncEnabledChange} />
+                </Form.Item>
+                <Form.Item label="同步目标">
+                  <Select
+                    value={syncProvider}
+                    onChange={handleSyncProviderChange}
+                    options={syncService.getAllAdapters().map((a) => ({ value: a.id, label: a.name }))}
+                    style={{ width: 280 }}
+                  />
+                </Form.Item>
+                {(syncProvider === 'onedrive' || syncProvider === 'googledrive' || syncProvider === 'dropbox') && (
+                  <>
+                    {syncProvider === 'onedrive' && HAS_BUILTIN_ONEDRIVE && (
+                      <Alert
+                        type="info"
+                        showIcon
+                        message="与 Remotely Save 相同方式：无需自行注册 Azure"
+                        description="本应用已配置内置 OneDrive 授权。您只需点击下方「登录并授权」，使用个人微软账号登录并同意权限即可，无需填写客户端 ID。若希望使用自己的 Azure 应用，可在「高级」中填写。"
+                        style={{ marginBottom: 16 }}
+                      />
+                    )}
+                    {syncProvider === 'onedrive' && (
+                      <Collapse
+                        size="small"
+                        items={[
+                          {
+                            key: 'onedrive-advanced',
+                            label: HAS_BUILTIN_ONEDRIVE ? '高级：使用自己的 Azure 应用（可选）' : '如何获取 OneDrive 客户端 ID（必读）',
+                            children: (
+                              <div style={{ paddingRight: 8 }}>
+                                {!HAS_BUILTIN_ONEDRIVE && (
+                                  <Alert
+                                    type="warning"
+                                    showIcon
+                                    message="若提示「在目录外部创建应用已被弃用」"
+                                    description={
+                                      <span>
+                                        微软已要求应用必须在「目录」(租户) 内创建。可
+                                        <a href="https://developer.microsoft.com/microsoft-365/profile" target="_blank" rel="noopener noreferrer">加入 M365 开发者计划</a>或
+                                        <a href="https://azure.microsoft.com/zh-cn/free/" target="_blank" rel="noopener noreferrer">注册 Azure 免费账户</a>。
+                                        或直接选 <strong>Google Drive、Dropbox、WebDAV</strong> 无需 Azure。
+                                      </span>
+                                    }
+                                    style={{ marginBottom: 12 }}
+                                  />
+                                )}
+                                <p style={{ marginBottom: 8 }}>1. 打开 <a href="https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank" rel="noopener noreferrer">Azure 应用注册</a>（需已有所属目录）。</p>
+                                <p style={{ marginBottom: 8 }}>2. 新注册 → 名称随意 → <strong>支持的账户类型</strong>选「任何组织目录中的账户和个人 Microsoft 账户」或「仅个人 Microsoft 账户」。</p>
+                                <p style={{ marginBottom: 8 }}>3. 重定向 URI 选「公共客户端/本机」，填 <code>http://localhost:3848/callback</code>。</p>
+                                <p style={{ marginBottom: 0 }}>4. 注册后复制「应用程序(客户端) ID」到下方；API 权限添加 Microsoft Graph 委托权限：<code>Files.ReadWrite</code>、<code>offline_access</code>。</p>
+                              </div>
+                            ),
+                          },
+                        ]}
+                        style={{ marginBottom: 16 }}
+                      />
+                    )}
+                    {(syncProvider !== 'onedrive' || !HAS_BUILTIN_ONEDRIVE) && (
+                      <Form.Item
+                        label={syncProvider === 'onedrive' ? 'OneDrive 客户端 ID' : syncProvider === 'googledrive' ? 'Google 客户端 ID' : 'Dropbox App key'}
+                        extra={
+                          syncProvider === 'onedrive'
+                            ? '复制 Azure 应用「概述」页的「应用程序(客户端) ID」'
+                            : syncProvider === 'googledrive'
+                              ? 'Google Cloud 应用，重定向 URI http://localhost:3848/callback，范围 drive.appdata'
+                              : 'Dropbox 应用，重定向 URI http://localhost:3848/callback，权限 files.content.read/write'
+                        }
+                      >
+                        <Input
+                          placeholder={syncProvider === 'dropbox' ? 'App key' : '客户端 ID'}
+                          value={syncClientId}
+                          onChange={(e) => setSyncClientId(e.target.value)}
+                          onBlur={() => {
+                            if (!syncClientId) return;
+                            const k = syncProvider === 'onedrive' ? 'sync_onedrive_client_id' : syncProvider === 'googledrive' ? 'sync_googledrive_client_id' : 'sync_dropbox_client_id';
+                            set(k, syncClientId);
+                          }}
+                        />
+                      </Form.Item>
+                    )}
+                    {syncProvider === 'onedrive' && HAS_BUILTIN_ONEDRIVE && (
+                      <Form.Item extra="留空则使用应用内置授权；填写则使用您自己的 Azure 应用">
+                        <Input
+                          placeholder="可选：自己的 Azure 应用客户端 ID"
+                          value={syncClientId}
+                          onChange={(e) => setSyncClientId(e.target.value)}
+                          onBlur={() => syncClientId && set('sync_onedrive_client_id', syncClientId)}
+                        />
+                      </Form.Item>
+                    )}
+                    <Form.Item>
+                      <Button loading={oauthConnecting} onClick={handleConnectOAuth}>
+                        登录并授权
+                      </Button>
+                    </Form.Item>
+                  </>
+                )}
+                {syncProvider === 'webdav' && (
+                  <>
+                    <Form.Item label="WebDAV 地址" extra="根地址，如 https://nextcloud.example.com/remote.php/dav/files/用户名/">
+                      <Input
+                        placeholder="https://..."
+                        value={syncWebdavUrl}
+                        onChange={(e) => setSyncWebdavUrl(e.target.value)}
+                        onBlur={() => syncWebdavUrl && set('sync_webdav_url', syncWebdavUrl)}
+                      />
+                    </Form.Item>
+                    <Form.Item label="用户名">
+                      <Input value={syncWebdavUser} onChange={(e) => setSyncWebdavUser(e.target.value)} onBlur={() => set('sync_webdav_user', syncWebdavUser)} />
+                    </Form.Item>
+                    <Form.Item label="密码">
+                      <Input.Password value={syncWebdavPassword} onChange={(e) => setSyncWebdavPassword(e.target.value)} onBlur={() => set('sync_webdav_password', syncWebdavPassword)} autoComplete="off" />
+                    </Form.Item>
+                  </>
+                )}
+                <Form.Item label="同步加密密码" extra="所有设备使用同一密码加密/解密，不填写则不会上传或拉取">
+                  <Input.Password
+                    placeholder="与其它设备一致"
+                    value={syncPassword}
+                    onChange={(e) => setSyncPassword(e.target.value)}
+                    autoComplete="off"
+                  />
+                </Form.Item>
+                <Form.Item>
+                  <Space>
+                    <Button type="primary" loading={syncLoading} onClick={handlePushSync}>
+                      上传到云端
+                    </Button>
+                    <Button loading={syncLoading} onClick={handlePullSync}>
+                      从云端拉取
+                    </Button>
+                  </Space>
+                </Form.Item>
+                <Form.Item>
+                  <Space>
+                    <Switch checked={syncRememberPassword} onChange={setSyncRememberPassword} />
+                    <span>在此设备记住加密密码（用于打开应用时自动拉取）</span>
+                  </Space>
+                </Form.Item>
+                {syncLastSyncAt && (
+                  <Form.Item label="上次同步">
+                    <Text type="secondary">{syncLastSyncAt}</Text>
+                  </Form.Item>
+                )}
+              </Card>
+            ),
+          },
+        ]
+      : []),
     {
       key: 'data',
       label: (

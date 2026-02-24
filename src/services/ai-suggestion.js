@@ -16,6 +16,7 @@ import { getAssistantName } from '../utils/assistant-name';
 import { PERIOD_LABELS } from '../constants/habits';
 import { getCurrentPeriod } from '../utils/period-helper';
 import { getLogger } from './logger-client';
+import { getCalendarService } from './calendar-service';
 
 const logger = getLogger();
 const TYPE_LABELS = Object.fromEntries((COUNTDOWN_TYPES || []).map((t) => [t.value, t.label]));
@@ -134,6 +135,91 @@ async function gatherContext() {
   });
   const countdownText = countdownLines.length === 0 ? '暂无倒数或纪念日' : countdownLines.join('\n');
 
+  // 临近重要节日时的额外关怀提示（不仅限于春节）
+  let festivalText = '';
+  try {
+    const cal = getCalendarService();
+    const todayInfo = cal.getDateInfo(today.toDate(), { showLunar: true, showHoliday: true });
+    const todayLunar = todayInfo.lunar;
+    const inSpringPeriod = todayLunar && todayLunar.month === 1 && todayLunar.day >= 1 && todayLunar.day <= 15;
+
+    if (inSpringPeriod) {
+      const dayNum = todayLunar.day;
+      if (dayNum === 1) {
+        festivalText = '今天就是农历春节，新的一年辛苦也要好好犒劳自己，记得和家人朋友说声新年好～';
+      } else if (dayNum <= 7) {
+        const dayNames = ['', '初一', '初二', '初三', '初四', '初五', '初六', '初七'];
+        festivalText = `农历春节${dayNames[dayNum] || `初${dayNum}`}，还在年味里，好好享受与家人朋友的相聚时光。`;
+      } else if (dayNum === 8) {
+        festivalText = '今天正月初八，不少地方开工啦，新的一年顺顺利利、步步高升～';
+      } else if (dayNum <= 15) {
+        festivalText = '还在正月里，年味未散，可以慢慢收心，也别忘了多陪陪家人。';
+      }
+    } else {
+    const maxDays = 60; // 向后看大约两个月
+    let nearest = null;
+
+    for (let i = 0; i <= maxDays; i++) {
+      const d = today.add(i, 'day');
+      const info = cal.getDateInfo(d.toDate(), { showLunar: true, showHoliday: true });
+      const lunar = info.lunar;
+      const holidays = info.holidays || [];
+
+      let festivalName = null;
+      let kind = 'holiday';
+
+      // 1. 优先用节假日里的法定/固定节日（去掉调休等纯工作日标记）
+      const mainHoliday = holidays.find(
+        (h) =>
+          h.name &&
+          (h.isOffDay ||
+            h.type === 'official' ||
+            h.type === 'fixed' ||
+            h.type === 'jieqi')
+      );
+      if (mainHoliday) {
+        festivalName = mainHoliday.name;
+        if (/春节/.test(festivalName)) kind = 'spring';
+      }
+
+      // 2. 若节假日信息缺失，对春节额外兜底：农历正月初一
+      if (!festivalName && lunar && lunar.month === 1 && lunar.day === 1) {
+        festivalName = '农历春节';
+        kind = 'spring';
+      }
+
+      if (!festivalName) continue;
+      nearest = { offset: i, date: d, lunar, festivalName, kind };
+      break;
+    }
+
+    if (nearest) {
+      const { offset: i, festivalName, kind } = nearest;
+      // 春节用更有“年味”的话术
+      if (kind === 'spring' || /春节/.test(festivalName)) {
+        if (i === 0) {
+          festivalText = '今天就是农历春节，新的一年辛苦也要好好犒劳自己，记得和家人朋友说声新年好～';
+        } else if (i === 1) {
+          festivalText = '明天就是农历春节，可以提前想好给谁发祝福、准备一点小仪式，让自己有被“年味”包围的感觉。';
+        } else {
+          festivalText = `离农历春节还有 ${i} 天，可以慢慢把该收尾的事安排好，也给自己留一点期待和放松的空间。`;
+        }
+      } else {
+        // 其他节日的通用提示
+        if (i === 0) {
+          festivalText = `今天是「${festivalName}」，可以给自己安排一点小仪式感，顺便给在乎的人发个问候。`;
+        } else if (i === 1) {
+          festivalText = `明天就是「${festivalName}」，今天可以简单计划一下想怎么过、想对谁说点什么。`;
+        } else {
+          festivalText = `离「${festivalName}」还有 ${i} 天，可以提早想想那天要怎么度过，让这段等待也变成一点点期待。`;
+        }
+      }
+    }
+    }
+  } catch (e) {
+    logger.warn('AiSuggestion', '计算节日信息失败', e?.message || e);
+  }
+
   return {
     date: today.format('YYYY-MM-DD dddd'),
     period: periodLabel,
@@ -143,6 +229,7 @@ async function gatherContext() {
     weatherText,
     wearText,
     countdownText,
+    festivalText,
     hasOutfits: !!hasOutfits,
     hasClothing: !!hasClothing,
   };
@@ -156,9 +243,10 @@ function buildPrompt(ctx) {
 2. **日程提醒**：今日日程摘要与注意事项。
 3. **习惯提醒**：当前时段建议完成的习惯与打卡鼓励。
 4. **天气与穿戴**：根据天气给穿着建议。若用户已配置服装/搭配，请结合其衣橱给出具体搭配建议；若未配置，则给普适的默认穿搭建议（如通勤、休闲、防暑防寒等）。
-5. **倒数/纪念日提醒**：若有即将到来的倒数日或纪念日（如高考、纪念日、生日等），简要提醒与寄语；若无则省略本部分。
+5. **倒数/纪念日提醒**：仅根据【倒数纪念日】部分列出的事件（如高考、纪念日、生日等）给出提醒与寄语；若该列表为空则省略本部分，**不得凭空创造新的倒数事件（例如“周末还有几天”等）**。
+6. **节日与春节等提示**：若【节日与春节等提示】非空，则单独用 1～2 句话说说里面提到的节日/春节相关关怀和提醒；若为空则可以省略本部分。本部分内容应与第 5 部分分开成段或单独小标题，不要混在一起。
 
-若用户资料中有 interests（兴趣/偏好），请在不刻意的前提下自然融入建议（如穿搭、金句或习惯鼓励）。请直接输出以上各部分内容（无倒数纪念日时跳过第 5 部分），用明显的分段（如小标题或空行）分隔，无需多余寒暄。`;
+若用户资料中有 interests（兴趣/偏好），请在不刻意的前提下自然融入建议（如穿搭、金句或习惯鼓励）。若【节日与春节等提示】中提到了农历春节等重要节日，可以在第 1 部分或第 6 部分自然加入一些带“年味”的祝福和关怀（如还剩几天就放假了、记得给家人朋友发问候等），但不要喧宾夺主，整体保持简洁亲切。请直接输出以上各部分内容（当某一部分无内容时可跳过该部分），用明显的分段（如小标题或空行）分隔，无需多余寒暄。`;
 
   const user = `【今日数据】
 日期：${ctx.date}
@@ -180,6 +268,9 @@ ${ctx.wearText}
 
 【倒数纪念日】
 ${ctx.countdownText}
+
+【节日与春节等提示】
+${ctx.festivalText || '无特别节日提示'}
 
 请根据以上信息，生成今日金句、日程提醒、习惯提醒、天气穿搭建议，以及倒数/纪念日提醒（若有）。`;
 

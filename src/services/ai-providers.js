@@ -182,6 +182,111 @@ export async function chat(messages) {
   return chatOllama(messages);
 }
 
+/**
+ * 带图片的对话（用于日记图片 AI 分析）
+ * content 可为 string 或 Array<{ type: 'text'|'image_url', text?: string, image_url?: { url: string } }>
+ * 仅 OpenAI / Anthropic 支持；Ollama 需视觉模型（如 llava）且格式不同，此处暂仅支持 openai/anthropic
+ */
+async function chatOpenAIWithImage(messages) {
+  const key = getOpenAIKey();
+  if (!key) throw new Error('请在设置中配置 OpenAI API Key');
+  const model = getOpenAIModel();
+  const url = resolveOpenAICompletionsUrl();
+  let data;
+  if (isElectron()) {
+    const r = await platformFetchJsonPost({
+      url,
+      body: { model, messages },
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!r.success) throw new Error(r.errorBody || `OpenAI 请求失败 ${r.status}`);
+    data = r.data;
+  } else {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ model, messages }),
+    });
+    if (!res.ok) throw new Error(await res.text().catch(() => `HTTP ${res.status}`));
+    data = await res.json();
+  }
+  const choice = data.choices?.[0];
+  if (!choice?.message?.content) throw new Error('OpenAI 返回格式异常');
+  return choice.message.content;
+}
+
+async function chatAnthropicWithImage(messages) {
+  const key = getAnthropicKey();
+  if (!key) throw new Error('请在设置中配置 Anthropic API Key');
+  const model = getAnthropicModel();
+  const url = resolveAnthropicMessagesUrl();
+  const system = messages.find((m) => m.role === 'system')?.content;
+  const msgs = messages.filter((m) => m.role === 'user' || m.role === 'assistant');
+  const body = {
+    model,
+    max_tokens: 1024,
+    messages: msgs.map((m) => ({
+      role: m.role,
+      content: Array.isArray(m.content) ? m.content : [{ type: 'text', text: m.content }],
+    })),
+  };
+  if (system) body.system = system;
+  let data;
+  if (isElectron()) {
+    const r = await platformFetchJsonPost({
+      url,
+      body,
+      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+    });
+    if (!r.success) throw new Error(r.errorBody || `Anthropic 请求失败 ${r.status}`);
+    data = r.data;
+  } else {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await res.text().catch(() => `HTTP ${res.status}`));
+    data = await res.json();
+  }
+  const block = data.content?.find((b) => b.type === 'text');
+  if (!block?.text) throw new Error('Anthropic 返回格式异常');
+  return block.text;
+}
+
+/**
+ * 用 AI 分析一张图片，返回简短描述（用于日记 image_analysis，便于搜索）
+ * @param {string} imageBase64 - base64 编码的图片（不含 data:xxx;base64, 前缀）
+ * @param {string} [mimeType] - 如 image/jpeg
+ * @returns {Promise<string>}
+ */
+export async function analyzeImageForDiary(imageBase64, mimeType = 'image/jpeg') {
+  const provider = getProvider();
+  const url = `data:${mimeType};base64,${imageBase64}`;
+  const userContent = [
+    {
+      type: 'text',
+      text:
+        '严格根据这张图片中真实可见的内容，用 1-2 句话用中文描述图片里的人物/物品、场景和明显情绪。' +
+        '不要凭空想象或补充看不到的信息；如果图片内容看不清或过于模糊，就直接回答“图片内容不清晰，无法准确分析”。' +
+        '只输出描述文字，不要其他解释。',
+    },
+    { type: 'image_url', image_url: { url } },
+  ];
+  const messages = [
+    {
+      role: 'system',
+      content:
+        '你是一个严谨的图片描述助手，只能根据图片中能真实看到的内容做客观描述，不能胡编乱造或猜测看不到的信息。',
+    },
+    { role: 'user', content: userContent },
+  ];
+
+  if (provider === 'openai') return chatOpenAIWithImage(messages);
+  if (provider === 'anthropic') return chatAnthropicWithImage(messages);
+  throw new Error('图片分析需要 OpenAI 或 Anthropic 提供商，请到设置中切换并配置 API Key');
+}
+
 export function getActiveProvider() {
   return getProvider();
 }

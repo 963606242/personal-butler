@@ -158,6 +158,9 @@ function Dashboard() {
         if (cached) {
           setSuggestionText(cached);
           setSuggestionError(null);
+        } else if (isAIConfigured()) {
+          // 没有缓存且已配置 AI 助手时，自动生成一条今日建议，让用户进首页就能看到“小惊喜”
+          handleFetchSuggestion();
         }
       } catch (e) {
         console.error('加载数据失败', e);
@@ -383,6 +386,12 @@ function Dashboard() {
                   </Button>
                   <Button size="small" icon={<CalendarOutlined />} onClick={() => navigate('/schedule')}>
                     {t('dashboard.addSchedule', '添加日程')}
+                  </Button>
+                  <Button size="small" icon={<FileTextOutlined />} onClick={() => navigate('/diary')}>
+                    {t('dashboard.writeDiary', '写一条日记')}
+                  </Button>
+                  <Button size="small" icon={<RobotOutlined />} onClick={() => navigate('/ai')}>
+                    {t('dashboard.chatWithAi', '和 AI 聊两句')}
                   </Button>
                 </Space>
               </>

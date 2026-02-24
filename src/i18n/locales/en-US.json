@@ -29,6 +29,7 @@
         "schedule": "Schedule",
         "habits": "Habits",
         "countdown": "Countdown",
+        "diary": "Diary",
         "equipment": "Equipment",
         "clothing": "Clothing",
         "weather": "Weather & Outfit",
@@ -38,6 +39,13 @@
         "settings": "Settings"
       }
     }
+  },
+  "diary": {
+    "pageTitle": "Diary",
+    "newEntry": "New Entry",
+    "editEntry": "Edit Entry",
+    "deleteConfirm": "Are you sure you want to delete this entry?",
+    "noEntries": "No entries for this day. Click \"New Entry\" to start recording."
   },
   "fun": {
     "pageTitle": "Fun tools",

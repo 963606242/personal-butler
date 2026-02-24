@@ -33,6 +33,11 @@ body {
   height: 100vh;
   /* iOS Safari / WebView：优先使用动态视口高度 */
   height: 100dvh;
+  /* iPad/iPhone 原生应用安全区（Capacitor 打包后避免内容被刘海/横条遮挡） */
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
 }
 
 /* ----- 彩蛋与人性化样式 ----- */
@@ -88,14 +93,6 @@ body {
   background: linear-gradient(165deg, #1a1a1a 0%, #141414 38%, #141414 100%) !important;
 }
 
-/* 顶栏：轻微底阴影 */
-.main-header {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-}
-[data-theme='dark'] .main-header {
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-}
-
 /* 主内容区：轻微阴影与层次 */
 .main-content {
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04);
@@ -103,10 +100,6 @@ body {
 }
 
 /* ===== 移动端 / iOS 安全区适配 ===== */
-
-.is-mobile .main-header {
-  padding-top: env(safe-area-inset-top);
-}
 
 /* 移动端主内容区：底部留出 Tab 栏高度 + 安全区 */
 .is-mobile .main-content.main-content-mobile {
@@ -183,29 +176,44 @@ body {
   background: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* 侧边栏菜单：留白、圆角、悬停/选中/点击小效果 */
+/* 侧边栏菜单：隐藏分组标题，圆角与选中态，不裁剪图标 */
 .sidebar-menu.ant-menu-inline {
   padding: 8px 0;
+  border-inline-end: none !important;
 }
+
+/* 隐藏「概览」「计划与习惯」等分组标题 */
+.sidebar-menu .ant-menu-item-group-title {
+  display: none !important;
+}
+.sidebar-menu .ant-menu-item-group {
+  margin-bottom: 2px;
+}
+.sidebar-menu .ant-menu-item-group:first-child .ant-menu-item {
+  margin-top: 0;
+}
+
 .sidebar-menu .ant-menu-item {
   margin: 2px 10px 2px 12px !important;
   padding-left: 12px !important;
   height: 40px !important;
   line-height: 40px !important;
   border-radius: 10px !important;
-  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
+  transition: background 0.2s ease, box-shadow 0.2s ease !important;
 }
 .sidebar-menu .ant-menu-item .anticon {
+  margin-inline-end: 10px !important;
+  font-size: 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   transition: transform 0.2s ease;
 }
-.sidebar-menu .ant-menu-item:hover {
-  transform: translateX(2px);
-}
 .sidebar-menu .ant-menu-item:hover .anticon {
-  transform: scale(1.12);
+  transform: scale(1.08);
 }
-.sidebar-menu .ant-menu-item:active {
-  transform: translateX(1px) scale(0.98);
+.sidebar-menu .ant-menu-item:active .anticon {
+  transform: scale(0.98);
 }
 .sidebar-menu .ant-menu-item-selected {
   font-weight: 500;
@@ -214,29 +222,28 @@ body {
 [data-theme='dark'] .sidebar-menu .ant-menu-item-selected {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 3px 0 0 var(--accent-primary, #1677ff) !important;
 }
-.sidebar-menu .ant-menu-item-selected:hover {
-  transform: translateX(2px);
-}
-.sidebar-menu .ant-menu-item-group-title {
-  margin-top: 12px;
-  margin-bottom: 4px;
-  padding-left: 12px;
-  font-size: 12px;
-  color: inherit;
-  opacity: 0.7;
-}
-.sidebar-menu .ant-menu-item-group:first-child .ant-menu-item-group-title {
-  margin-top: 0;
-}
 
-/* 折叠时菜单项适当收紧 */
+/* 折叠时：只显示图标居中，保证 80px 侧栏内不被裁剪 */
+.app-sidebar.ant-layout-sider-collapsed .sidebar-inner,
+.app-sidebar.ant-layout-sider-collapsed .ant-menu {
+  min-width: 0 !important;
+}
 .app-sidebar.ant-layout-sider-collapsed .sidebar-menu .ant-menu-item {
-  margin-inline: 8px !important;
-  padding-left: 0 !important;
-  justify-content: center;
+  margin-inline: 4px !important;
+  padding: 0 !important;
+  min-height: 40px !important;
+  min-width: 0 !important;
+  justify-content: center !important;
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
 }
 .app-sidebar.ant-layout-sider-collapsed .sidebar-menu .ant-menu-item .anticon {
-  margin-inline-end: 0;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+.app-sidebar.ant-layout-sider-collapsed .sidebar-menu .ant-menu-item .ant-menu-title-content {
+  display: none !important;
 }
 
 /* ===== 移动端底部 Tab 栏（iOS 风格） ===== */
