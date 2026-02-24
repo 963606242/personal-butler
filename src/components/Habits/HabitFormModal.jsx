@@ -3,10 +3,11 @@
  * 支持时段、提醒时间、频率、示例预设
  */
 import React from 'react';
-import { Modal, Form, Input, Select, TimePicker } from 'antd';
+import { Modal, Form, Input, Select, TimePicker, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { PERIOD_OPTIONS, FREQUENCY_OPTIONS, WEEKDAY_OPTIONS } from '../../constants/habits';
 
+const { Text } = Typography;
 const FREQ_LABELS = { daily: '每天', weekdays: '工作日', weekends: '周末', weekly: '每周' };
 
 /** 示例预设：名称、时段、建议提醒时间、频率 */
@@ -42,22 +43,19 @@ function HabitFormModal({ open, editing, onCancel, onOk, form }) {
       okText="保存"
       cancelText="取消"
       width={560}
+      className="habit-form-modal"
     >
       {!editing && (
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 6 }}>快速填写（可修改）</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
+            快速填写（可修改）
+          </Text>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {PRESETS.map((p) => (
               <span
                 key={p.name + p.period}
+                className="habit-preset-tag"
                 onClick={() => handlePreset(p)}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 4,
-                  background: '#f5f5f5',
-                  cursor: 'pointer',
-                  fontSize: 12,
-                }}
               >
                 {p.name}
               </span>

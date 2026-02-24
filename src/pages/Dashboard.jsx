@@ -301,37 +301,76 @@ function Dashboard() {
   return (
     <div>
       {/* 问候与日期 */}
-      <Card style={{ marginBottom: 24, background: greetingGradient, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+      <Card 
+        className="dashboard-greeting-card"
+        style={{ marginBottom: 24, background: greetingGradient }}
+      >
         <Row align="middle" gutter={24}>
           <Col flex="auto">
-            <Space align="center" wrap size="small" style={{ marginBottom: 4 }}>
-              <Title level={2} style={{ color: '#fff', margin: 0 }}>
+            <Space align="center" wrap size="small" style={{ marginBottom: 8 }}>
+              <Title level={2} style={{ color: '#fff', margin: 0, textShadow: '0 2px 8px rgba(0,0,0,0.15)' }}>
                 {greeting}
               </Title>
               {isWeekend && (
-                <Tag style={{ background: 'rgba(255,255,255,0.25)', color: '#fff', border: 'none', fontSize: 12 }}>
+                <Tag style={{ 
+                  background: 'rgba(255,255,255,0.2)', 
+                  backdropFilter: 'blur(8px)',
+                  color: '#fff', 
+                  border: 'none', 
+                  fontSize: 12,
+                  borderRadius: 8,
+                }}>
                   {t('dashboard.weekendTag')}
                 </Tag>
               )}
               {zodiac && (
-                <Tag style={{ background: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.95)', border: 'none', fontSize: 12 }}>
+                <Tag style={{ 
+                  background: 'rgba(255,255,255,0.15)', 
+                  backdropFilter: 'blur(8px)',
+                  color: 'rgba(255,255,255,0.95)', 
+                  border: 'none', 
+                  fontSize: 12,
+                  borderRadius: 8,
+                }}>
                   {zodiac}
                 </Tag>
               )}
               {mbti && (
-                <Tag style={{ background: 'rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.95)', border: 'none', fontSize: 12 }}>
+                <Tag style={{ 
+                  background: 'rgba(255,255,255,0.15)', 
+                  backdropFilter: 'blur(8px)',
+                  color: 'rgba(255,255,255,0.95)', 
+                  border: 'none', 
+                  fontSize: 12,
+                  borderRadius: 8,
+                }}>
                   {mbti}
                 </Tag>
               )}
             </Space>
-            <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 16 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 16, display: 'block' }}>
               {dayjs().format('YYYY年MM月DD日 dddd')}
             </Text>
           </Col>
           <Col>
-            <Text style={{ color: 'rgba(255,255,255,0.95)', fontSize: 48, fontWeight: 'bold', letterSpacing: 2 }}>
-              {dayjs().format('HH:mm')}
-            </Text>
+            <div style={{ textAlign: 'right' }}>
+              <Text 
+                className="dashboard-time-display"
+                style={{ 
+                  color: 'rgba(255,255,255,0.95)', 
+                  fontSize: 52, 
+                  fontWeight: 700, 
+                  letterSpacing: 2,
+                  display: 'block',
+                  lineHeight: 1,
+                }}
+              >
+                {dayjs().format('HH:mm')}
+              </Text>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 4, display: 'block' }}>
+                {currentPeriodInfo ? t('dashboard.periodLabel.' + currentPeriodInfo.value) : ''}
+              </Text>
+            </div>
           </Col>
         </Row>
       </Card>
@@ -353,9 +392,10 @@ function Dashboard() {
         <Col xs={24} lg={16}>
           {/* AI 管家建议 */}
           <Card
+            className="dashboard-feature-card dashboard-ai-card"
             title={
               <Space>
-                <RobotOutlined style={{ color: '#722ed1' }} />
+                <RobotOutlined className="dashboard-card-icon" style={{ color: '#722ed1', fontSize: 18 }} />
                 <span>{t('dashboard.assistantSuggestion', undefined, { name: getAssistantName() })}</span>
               </Space>
             }
@@ -426,12 +466,15 @@ function Dashboard() {
           {/* 天气信息 */}
           {currentWeather && (
             <Card
+              className="dashboard-feature-card dashboard-weather-card"
               title={
                 <Space>
-                  <CloudOutlined style={{ color: '#1890ff' }} />
+                  <CloudOutlined className="dashboard-card-icon" style={{ color: '#1890ff', fontSize: 18 }} />
                   <span>{t('dashboard.weather')}</span>
                   {currentCity && (
-                    <Tag color="blue">{currentCity.displayName || `${currentCity.name}, ${currentCity.country}`}</Tag>
+                    <Tag color="blue" style={{ borderRadius: 8 }}>
+                      {currentCity.displayName || `${currentCity.name}, ${currentCity.country}`}
+                    </Tag>
                   )}
                 </Space>
               }
@@ -449,31 +492,43 @@ function Dashboard() {
                       <img
                         src={`https://openweathermap.org/img/wn/${currentWeather.icon}@2x.png`}
                         alt={currentWeather.description}
-                        style={{ width: 60, height: 60 }}
+                        style={{ width: 72, height: 72, filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}
                       />
                     )}
-                    <div style={{ fontSize: 48, fontWeight: 'bold', lineHeight: 1 }}>
+                    <div className="dashboard-weather-temp">
                       {currentWeather.temp}°
                     </div>
-                    <div style={{ fontSize: 14, color: '#666', marginTop: 8 }}>
+                    <div style={{ fontSize: 14, color: token.colorTextSecondary, marginTop: 8 }}>
                       {currentWeather.description}
                     </div>
                   </div>
                 </Col>
                 <Col span={12}>
-                  <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                    <div>
-                      <Text type="secondary">{t('dashboard.feelsLike')}：</Text>
-                      <Text strong>{currentWeather.feelsLike}°C</Text>
+                  <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                    <div style={{ 
+                      padding: '8px 12px', 
+                      background: 'rgba(24, 144, 255, 0.06)', 
+                      borderRadius: 8,
+                    }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>{t('dashboard.feelsLike')}</Text>
+                      <div><Text strong style={{ fontSize: 16 }}>{currentWeather.feelsLike}°C</Text></div>
                     </div>
-                    <div>
-                      <Text type="secondary">{t('dashboard.humidity')}：</Text>
-                      <Text strong>{currentWeather.humidity}%</Text>
+                    <div style={{ 
+                      padding: '8px 12px', 
+                      background: 'rgba(82, 196, 26, 0.06)', 
+                      borderRadius: 8,
+                    }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>{t('dashboard.humidity')}</Text>
+                      <div><Text strong style={{ fontSize: 16 }}>{currentWeather.humidity}%</Text></div>
                     </div>
                     {currentWeather.windSpeed > 0 && (
-                      <div>
-                        <Text type="secondary">{t('dashboard.windSpeed')}：</Text>
-                        <Text strong>{currentWeather.windSpeed} m/s</Text>
+                      <div style={{ 
+                        padding: '8px 12px', 
+                        background: 'rgba(114, 46, 209, 0.06)', 
+                        borderRadius: 8,
+                      }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>{t('dashboard.windSpeed')}</Text>
+                        <div><Text strong style={{ fontSize: 16 }}>{currentWeather.windSpeed} m/s</Text></div>
                       </div>
                     )}
                   </Space>
@@ -484,13 +539,14 @@ function Dashboard() {
           {/* 当前时段习惯推荐 */}
           {currentPeriodInfo && (
             <Card
+              className="dashboard-feature-card"
               title={
                 <Space wrap size="small">
-                  <ThunderboltOutlined style={{ color: '#1890ff' }} />
+                  <ThunderboltOutlined className="dashboard-card-icon" style={{ color: '#faad14', fontSize: 18 }} />
                   <span>{t('dashboard.periodRecommend')}</span>
-                  <Tag color="blue">{t('dashboard.periodLabel.' + currentPeriodInfo.value)}</Tag>
+                  <Tag color="blue" style={{ borderRadius: 8 }}>{t('dashboard.periodLabel.' + currentPeriodInfo.value)}</Tag>
                   {stats.totalStreak > 0 && (
-                    <Tag icon={<FireOutlined />} color="orange">
+                    <Tag icon={<FireOutlined />} color="orange" style={{ borderRadius: 8 }}>
                       {t('dashboard.streakDays', undefined, { n: stats.totalStreak })}
                     </Tag>
                   )}
@@ -508,12 +564,21 @@ function Dashboard() {
                   dataSource={periodHabits}
                   renderItem={(item) => (
                     <List.Item
-                      style={{ cursor: 'pointer', padding: '12px 0' }}
+                      className="dashboard-list-item"
+                      style={{ cursor: 'pointer' }}
                       onClick={() => navigate('/habits')}
                     >
                       <List.Item.Meta
-                        avatar={<Avatar icon={<CheckCircleOutlined />} style={{ backgroundColor: '#52c41a' }} />}
-                        title={item.habit.name}
+                        avatar={
+                          <Avatar 
+                            icon={<CheckCircleOutlined />} 
+                            style={{ 
+                              backgroundColor: '#52c41a',
+                              boxShadow: '0 2px 8px rgba(82, 196, 26, 0.3)',
+                            }} 
+                          />
+                        }
+                        title={<Text strong>{item.habit.name}</Text>}
                         description={
                           <Space>
                             {item.habit.reminder_time && (
@@ -521,11 +586,18 @@ function Dashboard() {
                                 <ClockCircleOutlined /> {item.habit.reminder_time}
                               </Text>
                             )}
-                            <Text type="secondary">{t('dashboard.streakDaysShort', undefined, { n: getStreak(item.habit.id) })}</Text>
+                            <Tag color="orange" style={{ borderRadius: 6, fontSize: 11 }}>
+                              {t('dashboard.streakDaysShort', undefined, { n: getStreak(item.habit.id) })}
+                            </Tag>
                           </Space>
                         }
                       />
-                      <Button type="primary" size="small" onClick={(e) => { e.stopPropagation(); navigate('/habits'); }}>
+                      <Button 
+                        type="primary" 
+                        size="small" 
+                        style={{ borderRadius: 8 }}
+                        onClick={(e) => { e.stopPropagation(); navigate('/habits'); }}
+                      >
                         {t('dashboard.goCheckIn')}
                       </Button>
                     </List.Item>
@@ -540,20 +612,21 @@ function Dashboard() {
           {/* 今日新闻（早报/晚报） */}
           {dailyReport && (
             <Card
+              className="dashboard-feature-card"
               title={
                 <Space>
                   {dailyReport.type === 'morning' ? (
                     <>
-                      <ThunderboltOutlined style={{ color: '#faad14' }} />
+                      <ThunderboltOutlined className="dashboard-card-icon" style={{ color: '#faad14', fontSize: 18 }} />
                       <span>{t('dashboard.todayMorningReport')}</span>
                     </>
                   ) : (
                     <>
-                      <MoonOutlined style={{ color: '#1890ff' }} />
+                      <MoonOutlined className="dashboard-card-icon" style={{ color: '#1890ff', fontSize: 18 }} />
                       <span>{t('dashboard.todayEveningReport')}</span>
                     </>
                   )}
-                  <Tag>{dailyReport.date}</Tag>
+                  <Tag style={{ borderRadius: 8 }}>{dailyReport.date}</Tag>
                 </Space>
               }
               extra={
@@ -638,9 +711,10 @@ function Dashboard() {
 
           {/* 今日日程 */}
           <Card
+            className="dashboard-feature-card"
             title={
               <Space>
-                <CalendarOutlined style={{ color: '#52c41a' }} />
+                <CalendarOutlined className="dashboard-card-icon" style={{ color: '#52c41a', fontSize: 18 }} />
                 <span>{t('dashboard.todaySchedule')}</span>
               </Space>
             }
@@ -657,20 +731,43 @@ function Dashboard() {
                 renderItem={(schedule) => {
                   const start = schedule.start_time ? dayjs(schedule.start_time).format('HH:mm') : t('dashboard.allDay');
                   const end = schedule.end_time ? dayjs(schedule.end_time).format('HH:mm') : '';
+                  // 优先级颜色
+                  const priorityColors = { 3: '#ff4d4f', 2: '#faad14', 1: '#1890ff', 0: '#1890ff' };
+                  const avatarColor = priorityColors[schedule.priority] || '#1890ff';
                   return (
                     <List.Item
-                      style={{ cursor: 'pointer', padding: '12px 0' }}
+                      className="dashboard-list-item"
+                      style={{ cursor: 'pointer' }}
                       onClick={() => navigate('/schedule')}
                     >
                       <List.Item.Meta
-                        avatar={<Avatar icon={<CalendarOutlined />} style={{ backgroundColor: '#1890ff' }} />}
-                        title={schedule.title || t('dashboard.noTitle')}
+                        avatar={
+                          <Avatar 
+                            icon={<CalendarOutlined />} 
+                            style={{ 
+                              backgroundColor: avatarColor,
+                              boxShadow: `0 2px 8px ${avatarColor}40`,
+                            }} 
+                          />
+                        }
+                        title={<Text strong>{schedule.title || t('dashboard.noTitle')}</Text>}
                         description={
-                          <Space>
-                            <Text type="secondary">{start}{end ? ` - ${end}` : ''}</Text>
-                            {schedule.location && <Text type="secondary">📍 {schedule.location}</Text>}
+                          <Space wrap>
+                            <Tag 
+                              icon={<ClockCircleOutlined />} 
+                              style={{ borderRadius: 6, fontSize: 11 }}
+                            >
+                              {start}{end ? ` - ${end}` : ''}
+                            </Tag>
+                            {schedule.location && (
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                📍 {schedule.location}
+                              </Text>
+                            )}
                             {schedule.tags && schedule.tags.length > 0 && (
-                              <Tag color="blue">{schedule.tags[0]}</Tag>
+                              <Tag color="blue" style={{ borderRadius: 6, fontSize: 11 }}>
+                                {schedule.tags[0]}
+                              </Tag>
                             )}
                           </Space>
                         }
@@ -687,34 +784,34 @@ function Dashboard() {
           {/* 统计概览 */}
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} md={8}>
-              <Card>
+              <Card className="dashboard-stat-card dashboard-stat-card-blue">
                 <Statistic
-                  title={t('dashboard.habitTotal')}
+                  title={<span style={{ color: 'rgba(255,255,255,0.85)' }}>{t('dashboard.habitTotal')}</span>}
                   value={stats.total}
                   prefix={<CheckCircleOutlined />}
-                  valueStyle={{ color: '#1890ff' }}
+                  valueStyle={{ color: '#fff', fontSize: 32, fontWeight: 700 }}
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} md={8}>
-              <Card>
+              <Card className="dashboard-stat-card dashboard-stat-card-green">
                 <Statistic
-                  title={t('dashboard.recent7Rate')}
+                  title={<span style={{ color: 'rgba(255,255,255,0.85)' }}>{t('dashboard.recent7Rate')}</span>}
                   value={stats.rate}
                   suffix="%"
                   prefix={<TrophyOutlined />}
-                  valueStyle={{ color: '#52c41a' }}
+                  valueStyle={{ color: '#fff', fontSize: 32, fontWeight: 700 }}
                 />
               </Card>
             </Col>
             <Col xs={24} sm={12} md={8}>
-              <Card>
+              <Card className="dashboard-stat-card dashboard-stat-card-orange">
                 <Statistic
-                  title={t('dashboard.longestStreak')}
+                  title={<span style={{ color: 'rgba(255,255,255,0.85)' }}>{t('dashboard.longestStreak')}</span>}
                   value={stats.totalStreak}
                   suffix={t('dashboard.day')}
                   prefix={<FireOutlined />}
-                  valueStyle={{ color: '#faad14' }}
+                  valueStyle={{ color: '#fff', fontSize: 32, fontWeight: 700 }}
                 />
               </Card>
             </Col>
@@ -725,10 +822,11 @@ function Dashboard() {
         <Col xs={24} lg={8}>
           {/* 每日签到（小卡片） */}
           <Card
+            className="dashboard-checkin-card"
             size="small"
             title={
               <Space>
-                <SmileOutlined style={{ color: '#faad14' }} />
+                <SmileOutlined style={{ color: '#faad14', fontSize: 18 }} />
                 <span>{t('dashboard.checkin.title', '今日签到')}</span>
               </Space>
             }
@@ -738,6 +836,14 @@ function Dashboard() {
               <Button
                 type="primary"
                 block
+                size="large"
+                style={{ 
+                  borderRadius: 10, 
+                  height: 44,
+                  background: 'linear-gradient(135deg, #faad14 0%, #d48806 100%)',
+                  border: 'none',
+                  fontWeight: 600,
+                }}
                 onClick={() => {
                   const data = performCheckin();
                   setCheckinToday(data);
@@ -748,121 +854,127 @@ function Dashboard() {
               </Button>
             ) : (
               <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                <div>
-                  <Text type="secondary">{t('dashboard.checkin.score', '运势')} </Text>
-                  <Tag color="gold">{checkinToday.score}</Tag>
-                  <Text type="secondary"> {t('dashboard.checkin.scoreUnit', '分')}</Text>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  background: 'rgba(250, 173, 20, 0.1)',
+                  borderRadius: 8,
+                }}>
+                  <Text type="secondary">{t('dashboard.checkin.score', '运势')}</Text>
+                  <Tag color="gold" style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
+                    {checkinToday.score} {t('dashboard.checkin.scoreUnit', '分')}
+                  </Tag>
                 </div>
-                <div>
+                <div style={{ 
+                  padding: '8px 12px',
+                  background: 'rgba(82, 196, 26, 0.06)',
+                  borderRadius: 8,
+                }}>
                   <Text type="secondary" style={{ fontSize: 12 }}>{t('dashboard.checkin.yi', '宜')} </Text>
                   {checkinToday.yi.slice(0, 2).map((item, i) => (
-                    <Tag key={i} color="green" style={{ marginBottom: 2 }}>{item}</Tag>
+                    <Tag key={i} color="green" style={{ marginBottom: 2, borderRadius: 6 }}>{item}</Tag>
                   ))}
                 </div>
-                <div>
+                <div style={{ 
+                  padding: '8px 12px',
+                  background: 'rgba(0, 0, 0, 0.03)',
+                  borderRadius: 8,
+                }}>
                   <Text type="secondary" style={{ fontSize: 12 }}>{t('dashboard.checkin.ji', '忌')} </Text>
                   {checkinToday.ji.slice(0, 2).map((item, i) => (
-                    <Tag key={i} style={{ marginBottom: 2 }}>{item}</Tag>
+                    <Tag key={i} style={{ marginBottom: 2, borderRadius: 6 }}>{item}</Tag>
                   ))}
                 </div>
               </Space>
             )}
           </Card>
 
-          <Card title={t('dashboard.quickEntry', '快速入口')} style={{ marginBottom: 16 }}>
-            <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              <Button
-                type="default"
-                block
-                size="large"
-                icon={<UserOutlined />}
-                onClick={() => navigate('/profile')}
-              >
-                {t('layout.sidebar.menu.profile', '个人信息')}
-              </Button>
-              <Button
-                type="default"
-                block
-                size="large"
-                icon={<CalendarOutlined />}
-                onClick={() => navigate('/schedule')}
-              >
-                {t('layout.sidebar.menu.schedule', '日程管理')}
-              </Button>
-              <Button
-                type="default"
-                block
-                size="large"
-                icon={<CheckCircleOutlined />}
-                onClick={() => navigate('/habits')}
-              >
-                {t('layout.sidebar.menu.habits', '习惯追踪')}
-              </Button>
-              <Divider style={{ margin: '8px 0' }} />
-              <Button
-                type="default"
-                block
-                size="large"
-                icon={<CloudOutlined />}
-                onClick={() => navigate('/weather')}
-              >
-                {t('layout.sidebar.menu.weather', '天气与搭配')}
-              </Button>
-              <Button
-                type="default"
-                block
-                size="large"
-                icon={<FileTextOutlined />}
-                onClick={() => navigate('/news')}
-              >
-                {t('layout.sidebar.menu.news', '新闻资讯')}
-              </Button>
-              <Button
-                type="default"
-                block
-                size="large"
-                icon={<RobotOutlined />}
-                onClick={() => navigate('/ai')}
-              >
-                {t('layout.sidebar.menu.ai', 'AI助手')}
-              </Button>
-              <Button
-                type="default"
-                block
-                size="large"
-                icon={<ExperimentOutlined />}
-                onClick={() => navigate('/fun')}
-              >
-                {t('dashboard.funTools', '趣味工具')}
-              </Button>
-            </Space>
+          <Card 
+            className="dashboard-feature-card"
+            title={
+              <Space>
+                <ThunderboltOutlined style={{ color: '#1890ff', fontSize: 18 }} />
+                <span>{t('dashboard.quickEntry', '快速入口')}</span>
+              </Space>
+            } 
+            style={{ marginBottom: 16 }}
+          >
+            <div className="dashboard-quick-grid">
+              <div className="dashboard-quick-item" onClick={() => navigate('/profile')}>
+                <UserOutlined className="dashboard-quick-item-icon" />
+                <span className="dashboard-quick-item-label">{t('layout.sidebar.menu.profile', '个人信息')}</span>
+              </div>
+              <div className="dashboard-quick-item" onClick={() => navigate('/schedule')}>
+                <CalendarOutlined className="dashboard-quick-item-icon" />
+                <span className="dashboard-quick-item-label">{t('layout.sidebar.menu.schedule', '日程管理')}</span>
+              </div>
+              <div className="dashboard-quick-item" onClick={() => navigate('/habits')}>
+                <CheckCircleOutlined className="dashboard-quick-item-icon" />
+                <span className="dashboard-quick-item-label">{t('layout.sidebar.menu.habits', '习惯追踪')}</span>
+              </div>
+              <div className="dashboard-quick-item" onClick={() => navigate('/weather')}>
+                <CloudOutlined className="dashboard-quick-item-icon" />
+                <span className="dashboard-quick-item-label">{t('layout.sidebar.menu.weather', '天气搭配')}</span>
+              </div>
+              <div className="dashboard-quick-item" onClick={() => navigate('/news')}>
+                <FileTextOutlined className="dashboard-quick-item-icon" />
+                <span className="dashboard-quick-item-label">{t('layout.sidebar.menu.news', '新闻资讯')}</span>
+              </div>
+              <div className="dashboard-quick-item" onClick={() => navigate('/ai')}>
+                <RobotOutlined className="dashboard-quick-item-icon" />
+                <span className="dashboard-quick-item-label">{t('layout.sidebar.menu.ai', 'AI助手')}</span>
+              </div>
+              <div className="dashboard-quick-item" onClick={() => navigate('/diary')}>
+                <FileTextOutlined className="dashboard-quick-item-icon" />
+                <span className="dashboard-quick-item-label">日记本</span>
+              </div>
+              <div className="dashboard-quick-item" onClick={() => navigate('/fun')}>
+                <ExperimentOutlined className="dashboard-quick-item-icon" />
+                <span className="dashboard-quick-item-label">{t('dashboard.funTools', '趣味工具')}</span>
+              </div>
+            </div>
           </Card>
 
           {/* 习惯完成进度 */}
           {habits.length > 0 && (
-            <Card title={t('dashboard.habitProgress', '习惯完成进度')} style={{ marginBottom: 16 }}>
-              <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <Card 
+              className="dashboard-feature-card"
+              title={
+                <Space>
+                  <TrophyOutlined style={{ color: '#52c41a', fontSize: 18 }} />
+                  <span>{t('dashboard.habitProgress', '习惯完成进度')}</span>
+                </Space>
+              } 
+              style={{ marginBottom: 16 }}
+            >
+              <Space direction="vertical" style={{ width: '100%' }} size="middle">
                 {habits.slice(0, 5).map((habit) => {
-                  const stats = getStats(habit.id, 7);
+                  const habitStats = getStats(habit.id, 7);
                   return (
                     <div key={habit.id}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text strong>{habit.name}</Text>
-                        <Text type="secondary">{stats.completed}/{stats.targetDays}</Text>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <Text strong style={{ fontSize: 13 }}>{habit.name}</Text>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {habitStats.completed}/{habitStats.targetDays}
+                        </Text>
                       </div>
                       <Progress
-                        percent={stats.rate}
+                        className="dashboard-progress"
+                        percent={habitStats.rate}
                         size="small"
                         strokeColor={{
-                          '0%': '#108ee9',
-                          '100%': '#87d068',
+                          '0%': 'var(--accent-primary, #1890ff)',
+                          '100%': '#52c41a',
                         }}
+                        trailColor="rgba(0,0,0,0.04)"
                       />
                     </div>
                   );
                 })}
                 {habits.length > 5 && (
-                  <Button type="link" block onClick={() => navigate('/habits')}>
+                  <Button type="link" block onClick={() => navigate('/habits')} style={{ marginTop: 8 }}>
                     {t('dashboard.viewAllHabits', '查看全部习惯 →')}
                   </Button>
                 )}
@@ -871,7 +983,7 @@ function Dashboard() {
           )}
 
           {/* 提示卡片 */}
-          <Card>
+          <Card className="dashboard-tip-card">
             <Paragraph type="secondary" style={{ margin: 0, fontSize: 12 }}>
               💡 <Text strong>{t('dashboard.tip', '提示')}</Text>
               <br />

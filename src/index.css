@@ -55,14 +55,44 @@ body {
 [data-accent='male'] {
   --accent-primary: #2563eb;
   --accent-soft: rgba(37, 99, 235, 0.12);
+  --accent-rgb: 37, 99, 235;
 }
 [data-accent='female'] {
   --accent-primary: #db2777;
   --accent-soft: rgba(219, 39, 119, 0.12);
+  --accent-rgb: 219, 39, 119;
 }
 [data-accent='neutral'] {
   --accent-primary: #1677ff;
   --accent-soft: rgba(22, 119, 255, 0.12);
+  --accent-rgb: 22, 119, 255;
+}
+
+/* 日历视图专用变量 */
+:root {
+  --calendar-cell-bg: #ffffff;
+  --calendar-cell-bg-hover: #fafafa;
+  --calendar-cell-border: #f0f0f0;
+  --calendar-text-primary: #262626;
+  --calendar-text-secondary: #8c8c8c;
+  --calendar-rest-bg: linear-gradient(135deg, rgba(22, 119, 255, 0.08) 0%, rgba(22, 119, 255, 0.03) 100%);
+  --calendar-work-bg: linear-gradient(135deg, rgba(255, 77, 79, 0.08) 0%, rgba(255, 77, 79, 0.03) 100%);
+  --calendar-today-shadow: 0 0 0 2px var(--accent-primary, #1677ff), 0 4px 12px rgba(22, 119, 255, 0.15);
+  --calendar-cell-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --calendar-cell-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --calendar-cell-bg: #1f1f1f;
+  --calendar-cell-bg-hover: #262626;
+  --calendar-cell-border: #303030;
+  --calendar-text-primary: #e8e8e8;
+  --calendar-text-secondary: #999;
+  --calendar-rest-bg: linear-gradient(135deg, rgba(22, 119, 255, 0.15) 0%, rgba(22, 119, 255, 0.06) 100%);
+  --calendar-work-bg: linear-gradient(135deg, rgba(255, 77, 79, 0.15) 0%, rgba(255, 77, 79, 0.06) 100%);
+  --calendar-today-shadow: 0 0 0 2px var(--accent-primary, #1677ff), 0 4px 12px rgba(22, 119, 255, 0.25);
+  --calendar-cell-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --calendar-cell-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 /* 全局按钮、卡片等交互更柔和 */
@@ -419,4 +449,925 @@ body {
 
 [data-theme='dark'] .mobile-more-sheet-item-arrow {
   color: rgba(255, 255, 255, 0.25);
+}
+
+/* ===== 日历视图现代化样式 ===== */
+
+/* 日历单元格动画 */
+@keyframes calendarCellFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.calendar-cell-modern {
+  animation: calendarCellFadeIn 0.3s ease-out;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s ease,
+              background 0.3s ease;
+}
+
+.calendar-cell-modern:hover {
+  transform: translateY(-2px);
+}
+
+/* 日程标签点击反馈 */
+.schedule-tag-modern {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.schedule-tag-modern:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.schedule-tag-modern:active {
+  transform: scale(0.96);
+}
+
+/* ===== 日视图样式 ===== */
+
+.day-view-container {
+  position: relative;
+  height: calc(100vh - 280px);
+  min-height: 500px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 12px;
+  background: var(--calendar-cell-bg);
+  border: 1px solid var(--calendar-cell-border);
+}
+
+.day-view-time-grid {
+  position: relative;
+  min-height: 1440px; /* 24 * 60px */
+}
+
+/* 时间轴刻度线 */
+.time-slot-line {
+  position: absolute;
+  left: 60px;
+  right: 0;
+  height: 1px;
+  background: var(--calendar-cell-border);
+}
+
+.time-slot-line-half {
+  background: transparent;
+  border-top: 1px dashed rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='dark'] .time-slot-line-half {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+/* 时间标签 */
+.time-slot-label {
+  position: absolute;
+  left: 0;
+  width: 56px;
+  padding-right: 8px;
+  font-size: 11px;
+  color: var(--calendar-text-secondary);
+  text-align: right;
+  transform: translateY(-50%);
+  user-select: none;
+}
+
+/* 日程块样式 */
+.event-block {
+  position: absolute;
+  left: 64px;
+  right: 8px;
+  min-height: 24px;
+  padding: 6px 8px 6px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.event-block::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+
+.event-block:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.event-block-high::before {
+  background: #ff4d4f;
+}
+
+.event-block-medium::before {
+  background: #faad14;
+}
+
+.event-block-low::before,
+.event-block-normal::before {
+  background: var(--accent-primary, #1677ff);
+}
+
+.event-block-high {
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.15) 0%, rgba(255, 77, 79, 0.06) 100%);
+}
+
+.event-block-medium {
+  background: linear-gradient(135deg, rgba(250, 173, 20, 0.15) 0%, rgba(250, 173, 20, 0.06) 100%);
+}
+
+.event-block-low,
+.event-block-normal {
+  background: linear-gradient(135deg, rgba(22, 119, 255, 0.12) 0%, rgba(22, 119, 255, 0.04) 100%);
+}
+
+[data-theme='dark'] .event-block-high {
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.25) 0%, rgba(255, 77, 79, 0.1) 100%);
+}
+
+[data-theme='dark'] .event-block-medium {
+  background: linear-gradient(135deg, rgba(250, 173, 20, 0.25) 0%, rgba(250, 173, 20, 0.1) 100%);
+}
+
+[data-theme='dark'] .event-block-low,
+[data-theme='dark'] .event-block-normal {
+  background: linear-gradient(135deg, rgba(22, 119, 255, 0.2) 0%, rgba(22, 119, 255, 0.08) 100%);
+}
+
+.event-block-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--calendar-text-primary);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-block-time {
+  font-size: 11px;
+  color: var(--calendar-text-secondary);
+  margin-top: 2px;
+}
+
+.event-block-location {
+  font-size: 11px;
+  color: var(--calendar-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 当前时间指示器 */
+.current-time-line {
+  position: absolute;
+  left: 56px;
+  right: 0;
+  height: 2px;
+  background: var(--accent-primary, #1677ff);
+  z-index: 20;
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(var(--accent-rgb, 22, 119, 255), 0.4);
+}
+
+.current-time-dot {
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-primary, #1677ff);
+  box-shadow: 0 0 6px rgba(var(--accent-rgb, 22, 119, 255), 0.5);
+}
+
+/* 全天事件区域 */
+.all-day-events {
+  padding: 8px 8px 8px 64px;
+  border-bottom: 1px solid var(--calendar-cell-border);
+  background: var(--calendar-cell-bg);
+  min-height: 44px;
+}
+
+.all-day-event-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  margin: 2px 4px 2px 0;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--accent-soft, rgba(22, 119, 255, 0.12));
+  color: var(--accent-primary, #1677ff);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.all-day-event-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 日视图头部 */
+.day-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  margin-bottom: 12px;
+}
+
+.day-view-date-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.day-view-date-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--calendar-text-primary);
+  line-height: 1;
+}
+
+.day-view-date-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.day-view-weekday {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--calendar-text-primary);
+}
+
+.day-view-lunar {
+  font-size: 12px;
+  color: var(--calendar-text-secondary);
+}
+
+/* 日视图导航按钮 */
+.day-view-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.day-view-nav-btn:hover {
+  transform: scale(1.08);
+}
+
+.day-view-nav-btn:active {
+  transform: scale(0.96);
+}
+
+/* 空状态 */
+.day-view-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--calendar-text-secondary);
+}
+
+.day-view-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+/* ===== 仪表盘现代化样式 ===== */
+
+/* 问候卡片 */
+.dashboard-greeting-card {
+  position: relative;
+  overflow: hidden;
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+}
+
+.dashboard-greeting-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.dashboard-greeting-card::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* 时间显示动画 */
+@keyframes timeGlow {
+  0%, 100% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.3); }
+  50% { text-shadow: 0 0 30px rgba(255, 255, 255, 0.5); }
+}
+
+.dashboard-time-display {
+  animation: timeGlow 3s ease-in-out infinite;
+}
+
+/* 统计卡片 */
+.dashboard-stat-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px !important;
+  border: none !important;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease !important;
+}
+
+.dashboard-stat-card:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15) !important;
+}
+
+.dashboard-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100px;
+  height: 100px;
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.dashboard-stat-card-blue {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%) !important;
+}
+
+.dashboard-stat-card-green {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%) !important;
+}
+
+.dashboard-stat-card-orange {
+  background: linear-gradient(135deg, #faad14 0%, #d48806 100%) !important;
+}
+
+.dashboard-stat-card-purple {
+  background: linear-gradient(135deg, #722ed1 0%, #531dab 100%) !important;
+}
+
+[data-theme='dark'] .dashboard-stat-card-blue {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+}
+
+[data-theme='dark'] .dashboard-stat-card-green {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+}
+
+[data-theme='dark'] .dashboard-stat-card-orange {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+}
+
+[data-theme='dark'] .dashboard-stat-card-purple {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%) !important;
+}
+
+/* 快速入口网格 */
+.dashboard-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.dashboard-quick-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  border-radius: 12px;
+  background: var(--calendar-cell-bg, #ffffff);
+  border: 1px solid var(--calendar-cell-border, #f0f0f0);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-quick-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border-color: var(--accent-primary, #1677ff);
+}
+
+.dashboard-quick-item:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.dashboard-quick-item-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+  color: var(--accent-primary, #1677ff);
+  transition: transform 0.2s ease;
+}
+
+.dashboard-quick-item:hover .dashboard-quick-item-icon {
+  transform: scale(1.15);
+}
+
+.dashboard-quick-item-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--calendar-text-primary, #262626);
+  text-align: center;
+}
+
+[data-theme='dark'] .dashboard-quick-item {
+  background: #1f1f1f;
+  border-color: #303030;
+}
+
+[data-theme='dark'] .dashboard-quick-item:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* 功能卡片悬停效果 */
+.dashboard-feature-card {
+  border-radius: 14px !important;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease !important;
+  overflow: hidden;
+}
+
+.dashboard-feature-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='dark'] .dashboard-feature-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 卡片标题图标动画 */
+.dashboard-card-icon {
+  transition: transform 0.3s ease;
+}
+
+.dashboard-feature-card:hover .dashboard-card-icon {
+  transform: scale(1.15) rotate(-5deg);
+}
+
+/* 天气卡片 */
+.dashboard-weather-card {
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(24, 144, 255, 0.02) 100%);
+  border: 1px solid rgba(24, 144, 255, 0.15) !important;
+  border-radius: 14px !important;
+}
+
+[data-theme='dark'] .dashboard-weather-card {
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.15) 0%, rgba(24, 144, 255, 0.05) 100%);
+  border-color: rgba(24, 144, 255, 0.25) !important;
+}
+
+.dashboard-weather-temp {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme='dark'] .dashboard-weather-temp {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* AI 建议卡片 */
+.dashboard-ai-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-ai-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #722ed1 0%, #eb2f96 50%, #faad14 100%);
+}
+
+/* 签到卡片 */
+.dashboard-checkin-card {
+  background: linear-gradient(135deg, rgba(250, 173, 20, 0.08) 0%, rgba(250, 173, 20, 0.02) 100%);
+  border: 1px solid rgba(250, 173, 20, 0.2) !important;
+  border-radius: 14px !important;
+  transition: all 0.25s ease !important;
+}
+
+.dashboard-checkin-card:hover {
+  box-shadow: 0 4px 16px rgba(250, 173, 20, 0.15) !important;
+}
+
+[data-theme='dark'] .dashboard-checkin-card {
+  background: linear-gradient(135deg, rgba(250, 173, 20, 0.12) 0%, rgba(250, 173, 20, 0.04) 100%);
+  border-color: rgba(250, 173, 20, 0.3) !important;
+}
+
+/* 列表项悬停效果 */
+.dashboard-list-item {
+  border-radius: 10px;
+  transition: background 0.2s ease, transform 0.2s ease;
+  margin: 4px 0;
+  padding: 12px !important;
+}
+
+.dashboard-list-item:hover {
+  background: var(--calendar-cell-bg-hover, #fafafa);
+  transform: translateX(4px);
+}
+
+[data-theme='dark'] .dashboard-list-item:hover {
+  background: #262626;
+}
+
+/* 进度条美化 */
+.dashboard-progress .ant-progress-inner {
+  border-radius: 8px !important;
+}
+
+.dashboard-progress .ant-progress-bg {
+  border-radius: 8px !important;
+}
+
+/* 提示卡片 */
+.dashboard-tip-card {
+  background: linear-gradient(135deg, rgba(22, 119, 255, 0.05) 0%, rgba(114, 46, 209, 0.05) 100%);
+  border: 1px dashed var(--calendar-cell-border, #f0f0f0) !important;
+  border-radius: 12px !important;
+}
+
+[data-theme='dark'] .dashboard-tip-card {
+  background: linear-gradient(135deg, rgba(22, 119, 255, 0.08) 0%, rgba(114, 46, 209, 0.08) 100%);
+  border-color: #303030 !important;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .dashboard-quick-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  
+  .dashboard-quick-item {
+    padding: 12px 8px;
+  }
+  
+  .dashboard-quick-item-icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+  
+  .dashboard-quick-item-label {
+    font-size: 11px;
+  }
+  
+  .dashboard-greeting-card {
+    border-radius: 12px !important;
+  }
+  
+  .dashboard-stat-card {
+    border-radius: 10px !important;
+  }
+}
+
+/* ===== 习惯追踪现代化样式 ===== */
+
+/* 习惯时段卡片 */
+.habit-period-card {
+  border-radius: 14px !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+  overflow: hidden;
+}
+
+.habit-period-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme='dark'] .habit-period-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 习惯卡片 */
+.habit-card {
+  border-radius: 12px !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow: hidden;
+}
+
+.habit-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme='dark'] .habit-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 习惯卡片 - 已完成状态 */
+.habit-card-completed {
+  background: linear-gradient(135deg, rgba(82, 196, 26, 0.08) 0%, rgba(82, 196, 26, 0.02) 100%) !important;
+  border-color: rgba(82, 196, 26, 0.3) !important;
+}
+
+[data-theme='dark'] .habit-card-completed {
+  background: linear-gradient(135deg, rgba(82, 196, 26, 0.15) 0%, rgba(82, 196, 26, 0.05) 100%) !important;
+  border-color: rgba(82, 196, 26, 0.4) !important;
+}
+
+/* 习惯卡片 - 未完成状态 */
+.habit-card-pending {
+  background: var(--calendar-cell-bg, #ffffff);
+}
+
+[data-theme='dark'] .habit-card-pending {
+  background: #1f1f1f;
+}
+
+/* 连续天数徽章 */
+.habit-streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(250, 173, 20, 0.3);
+}
+
+/* 习惯统计卡片 */
+.habit-stat-mini {
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--calendar-cell-bg-hover, #fafafa);
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.habit-stat-mini:hover {
+  transform: scale(1.02);
+}
+
+[data-theme='dark'] .habit-stat-mini {
+  background: #262626;
+}
+
+/* 打卡复选框美化 */
+.habit-checkbox .ant-checkbox-inner {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border-width: 2px;
+  transition: all 0.2s ease;
+}
+
+.habit-checkbox .ant-checkbox-checked .ant-checkbox-inner {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+  border-color: #52c41a;
+}
+
+.habit-checkbox .ant-checkbox-checked .ant-checkbox-inner::after {
+  width: 6px;
+  height: 10px;
+}
+
+/* 打卡按钮 */
+.habit-checkin-btn {
+  border-radius: 20px !important;
+  font-weight: 500;
+  transition: all 0.25s ease !important;
+}
+
+.habit-checkin-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+}
+
+/* 习惯表格卡片容器 */
+.habit-table-card {
+  border-radius: 14px !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+  overflow: hidden;
+}
+
+.habit-table-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='dark'] .habit-table-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 习惯表格美化 */
+.habit-table .ant-table {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.habit-table .ant-table-thead > tr > th {
+  background: var(--calendar-cell-bg-hover, #fafafa) !important;
+  font-weight: 600;
+}
+
+[data-theme='dark'] .habit-table .ant-table-thead > tr > th {
+  background: #262626 !important;
+}
+
+.habit-table .ant-table-tbody > tr:hover > td {
+  background: rgba(var(--accent-rgb, 22, 119, 255), 0.04) !important;
+}
+
+/* 习惯报表卡片 */
+.habit-report-card {
+  border-radius: 14px !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.habit-report-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='dark'] .habit-report-card:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 预设标签 */
+.habit-preset-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--calendar-cell-bg-hover, #f5f5f5);
+  color: var(--calendar-text-primary, #262626);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.habit-preset-tag:hover {
+  background: var(--accent-soft, rgba(22, 119, 255, 0.12));
+  color: var(--accent-primary, #1677ff);
+  border-color: var(--accent-primary, #1677ff);
+  transform: translateY(-1px);
+}
+
+[data-theme='dark'] .habit-preset-tag {
+  background: #262626;
+  color: #e8e8e8;
+}
+
+[data-theme='dark'] .habit-preset-tag:hover {
+  background: rgba(var(--accent-rgb, 22, 119, 255), 0.2);
+}
+
+/* 习惯进度条 */
+.habit-progress .ant-progress-inner {
+  border-radius: 10px !important;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme='dark'] .habit-progress .ant-progress-inner {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.habit-progress .ant-progress-bg {
+  border-radius: 10px !important;
+  background: linear-gradient(90deg, var(--accent-primary, #1677ff) 0%, #52c41a 100%);
+}
+
+/* 时段标题样式 */
+.habit-period-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.habit-period-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.habit-period-icon-dawn {
+  background: linear-gradient(135deg, rgba(250, 173, 20, 0.15) 0%, rgba(250, 173, 20, 0.05) 100%);
+  color: #d48806;
+}
+
+.habit-period-icon-morning {
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.15) 0%, rgba(24, 144, 255, 0.05) 100%);
+  color: #1890ff;
+}
+
+.habit-period-icon-noon {
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.15) 0%, rgba(255, 77, 79, 0.05) 100%);
+  color: #ff4d4f;
+}
+
+.habit-period-icon-afternoon {
+  background: linear-gradient(135deg, rgba(114, 46, 209, 0.15) 0%, rgba(114, 46, 209, 0.05) 100%);
+  color: #722ed1;
+}
+
+.habit-period-icon-dusk {
+  background: linear-gradient(135deg, rgba(235, 47, 150, 0.15) 0%, rgba(235, 47, 150, 0.05) 100%);
+  color: #eb2f96;
+}
+
+.habit-period-icon-evening {
+  background: linear-gradient(135deg, rgba(82, 196, 26, 0.15) 0%, rgba(82, 196, 26, 0.05) 100%);
+  color: #52c41a;
+}
+
+.habit-period-icon-night {
+  background: linear-gradient(135deg, rgba(47, 84, 235, 0.15) 0%, rgba(47, 84, 235, 0.05) 100%);
+  color: #2f54eb;
+}
+
+/* 习惯表单弹窗 */
+.habit-form-modal .ant-modal-content {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.habit-form-modal .ant-modal-header {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.habit-form-modal .ant-modal-body {
+  padding-top: 12px;
+}
+
+/* 空状态美化 */
+.habit-empty {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.habit-empty-icon {
+  font-size: 64px;
+  color: var(--calendar-text-secondary, #8c8c8c);
+  opacity: 0.4;
+  margin-bottom: 16px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .habit-card {
+    border-radius: 10px !important;
+  }
+  
+  .habit-period-card {
+    border-radius: 12px !important;
+  }
+  
+  .habit-preset-tag {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
 }

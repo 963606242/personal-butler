@@ -321,8 +321,21 @@ function Habits() {
                     {habitsByPeriod.map(({ period, list }) => (
                       <Card
                         key={period.value}
+                        className="habit-period-card"
                         size="small"
-                        title={`${period.label}（${period.hint}）`}
+                        title={
+                          <span className="habit-period-title">
+                            <span className={`habit-period-icon habit-period-icon-${period.value}`}>
+                              {period.value === 'dawn' ? '🌅' : 
+                               period.value === 'morning' ? '☀️' : 
+                               period.value === 'noon' ? '🌤️' : 
+                               period.value === 'afternoon' ? '🌞' : 
+                               period.value === 'dusk' ? '🌇' : 
+                               period.value === 'evening' ? '🌙' : '🌃'}
+                            </span>
+                            {period.label}（{period.hint}）
+                          </span>
+                        }
                         style={{ marginBottom: 16 }}
                       >
                         <Row gutter={[16, 16]}>
@@ -335,14 +348,20 @@ function Habits() {
                             return (
                               <Col key={habit.id} xs={24} sm={24} md={12} lg={8}>
                                 <Card
+                                  className={`habit-card ${completed ? 'habit-card-completed' : 'habit-card-pending'}`}
                                   size="small"
                                   type="inner"
                                   title={
                                     <Space>
-                                      <span>{habit.name}</span>
+                                      <span style={{ fontWeight: 600 }}>{habit.name}</span>
                                       <Text type="secondary" style={{ fontSize: 12 }}>
                                         {FREQ_LABELS[habit.frequency] || habit.frequency}
                                       </Text>
+                                      {streak >= 3 && (
+                                        <span className="habit-streak-badge">
+                                          <FireOutlined /> {streak}天
+                                        </span>
+                                      )}
                                     </Space>
                                   }
                                   extra={
@@ -361,6 +380,7 @@ function Habits() {
                                   actions={[
                                     <Tooltip key="ck" title={targetToday ? (completed ? t('habits.todayCheck.tooltipCancel', '取消打卡') : t('habits.todayCheck.tooltipTargetToday', '今日打卡')) : t('habits.todayCheck.tooltipNonTarget', '今日非目标日')}>
                                       <Checkbox
+                                        className="habit-checkbox"
                                         checked={completed}
                                         disabled={!targetToday}
                                         onChange={(e) => handleToggleCheck(habit, e.target.checked)}
@@ -372,15 +392,35 @@ function Habits() {
                                 >
                                   <Row gutter={12}>
                                     <Col span={12}>
-                                      <Statistic title={t('habits.cards.streakTitle', '连续')} value={streak} prefix={<FireOutlined />} suffix={t('habits.cards.streakSuffix', '天')} />
+                                      <div className="habit-stat-mini">
+                                        <div style={{ fontSize: 24, fontWeight: 700, color: '#faad14' }}>
+                                          <FireOutlined style={{ marginRight: 4 }} />
+                                          {streak}
+                                        </div>
+                                        <Text type="secondary" style={{ fontSize: 12 }}>{t('habits.cards.streakTitle', '连续')}{t('habits.cards.streakSuffix', '天')}</Text>
+                                      </div>
                                     </Col>
                                     <Col span={12}>
-                                      <Statistic title={t('habits.cards.recentStatsTitlePrefix', '近') + statsRange + t('habits.cards.recentStatsTitleSuffix', '天')} value={stats.completed} suffix={`/ ${stats.targetDays}`} />
+                                      <div className="habit-stat-mini">
+                                        <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--accent-primary, #1677ff)' }}>
+                                          {stats.completed}<span style={{ fontSize: 14, fontWeight: 400 }}>/{stats.targetDays}</span>
+                                        </div>
+                                        <Text type="secondary" style={{ fontSize: 12 }}>{t('habits.cards.recentStatsTitlePrefix', '近')}{statsRange}{t('habits.cards.recentStatsTitleSuffix', '天')}</Text>
+                                      </div>
                                     </Col>
                                   </Row>
-                                  <Progress percent={stats.rate} size="small" style={{ marginTop: 8 }} />
+                                  <Progress 
+                                    className="habit-progress"
+                                    percent={stats.rate} 
+                                    size="small" 
+                                    style={{ marginTop: 12 }} 
+                                    strokeColor={{
+                                      '0%': 'var(--accent-primary, #1677ff)',
+                                      '100%': '#52c41a',
+                                    }}
+                                  />
                                   {habit.reminder_time && (
-                                    <div style={{ marginTop: 6, fontSize: 12, color: '#8c8c8c' }}>
+                                    <div style={{ marginTop: 8, fontSize: 12, color: 'var(--calendar-text-secondary, #8c8c8c)' }}>
                                       <CalendarOutlined /> {t('habits.cards.reminderPrefix', '提醒 ')}{habit.reminder_time}
                                     </div>
                                   )}
@@ -392,8 +432,9 @@ function Habits() {
                       </Card>
                     ))}
                     {habits.length > 0 && (
-                      <Card size="small" title={t('habits.table.recentWeekTitle', '最近一周打卡')} style={{ marginTop: 16 }}>
+                      <Card size="small" className="habit-table-card" title={t('habits.table.recentWeekTitle', '最近一周打卡')} style={{ marginTop: 16 }}>
                         <Table
+                          className="habit-table"
                           size="small"
                           pagination={false}
                           dataSource={habits.map((h) => {
@@ -464,7 +505,7 @@ function Habits() {
                   <>
                     <Row gutter={[16, 16]}>
                       <Col span={24} md={12}>
-                        <Card size="small" title={t('habits.reports.byPeriodTitle', '完成占比（按时段）')}>
+                        <Card size="small" className="habit-report-card" title={t('habits.reports.byPeriodTitle', '完成占比（按时段）')}>
                           {pieData.length > 0 ? (
                             <HabitsPieChart data={pieData} legendColor={legendColor} />
                           ) : (
@@ -473,7 +514,7 @@ function Habits() {
                         </Card>
                       </Col>
                       <Col span={24} md={12}>
-                        <Card size="small" title={t('habits.reports.byHabitTitle', '完成占比（按习惯）')}>
+                        <Card size="small" className="habit-report-card" title={t('habits.reports.byHabitTitle', '完成占比（按习惯）')}>
                           {pieDataByHabit.length > 0 ? (
                             <HabitsPieChart data={pieDataByHabit} legendColor={legendColor} />
                           ) : (
@@ -482,7 +523,7 @@ function Habits() {
                         </Card>
                       </Col>
                     </Row>
-                    <Card size="small" title={t('habits.reports.dailyCompletionTitle', '每日完成情况')} style={{ marginTop: 16 }}>
+                    <Card size="small" className="habit-report-card" title={t('habits.reports.dailyCompletionTitle', '每日完成情况')} style={{ marginTop: 16 }}>
                       {columnData.length > 0 ? (
                         <div style={{ minHeight: 260 }}>
                           <Column
@@ -498,7 +539,7 @@ function Habits() {
                       )}
                     </Card>
                     {reportData && (
-                      <Card size="small" title={reportTab === 'week' ? t('habits.reports.reportTitleWeek', '习惯周报') : reportTab === 'month' ? t('habits.reports.reportTitleMonth', '习惯月报') : t('habits.reports.reportTitleYear', '习惯年报')} style={{ marginTop: 16 }}>
+                      <Card size="small" className="habit-report-card" title={reportTab === 'week' ? t('habits.reports.reportTitleWeek', '习惯周报') : reportTab === 'month' ? t('habits.reports.reportTitleMonth', '习惯月报') : t('habits.reports.reportTitleYear', '习惯年报')} style={{ marginTop: 16 }}>
                         <div style={{ marginBottom: 12 }}>
                           <Statistic
                             title={t('habits.reports.completionRate', '完成率')}

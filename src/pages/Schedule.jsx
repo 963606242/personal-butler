@@ -38,6 +38,8 @@ import {
   SettingOutlined,
   BarChartOutlined,
   RobotOutlined,
+  UnorderedListOutlined,
+  ScheduleOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
@@ -47,6 +49,7 @@ import useCalendarConfigStore from '../stores/calendarConfigStore';
 import { getLogger } from '../services/logger-client';
 import { getCalendarService } from '../services/calendar-service';
 import CalendarConfigModal from '../components/Calendar/CalendarConfigModal';
+import DayView from '../components/Calendar/DayView';
 import { useI18n } from '../context/I18nContext';
 
 const { Title } = Typography;
@@ -59,8 +62,10 @@ function Schedule() {
   const [modalVisible, setModalVisible] = useState(false);
   const [configModalVisible, setConfigModalVisible] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(null);
-  const [viewMode, setViewMode] = useState('calendar'); // 'calendar' | 'list' | 'analysis'，默认日历视图
+  const [viewMode, setViewMode] = useState('calendar'); // 'calendar' | 'day' | 'list' | 'analysis'
   const [analysisRange, setAnalysisRange] = useState('week'); // 'week' | 'month'
+  const [dayViewDate, setDayViewDate] = useState(new Date()); // 日视图选中的日期
+  const [hoveredCell, setHoveredCell] = useState(null); // 悬停的单元格日期
   const { t } = useI18n();
   
   const {
@@ -363,6 +368,7 @@ function Schedule() {
     
     const value = current;
     const date = value.toDate();
+    const dateKey = value.format('YYYY-MM-DD');
     const daySchedules = getSchedulesByDate(date);
     
     // 获取日期信息
@@ -373,6 +379,7 @@ function Schedule() {
     
     const isToday = dayjs(date).isSame(dayjs(), 'day');
     const isWeekend = value.day() === 0 || value.day() === 6;
+    const isHovered = hoveredCell === dateKey;
     
     // 农历单独一行；节气+节假日合并为一行 Tag 并排 [情人节] [春节]
     const lunarText =
@@ -396,40 +403,63 @@ function Schedule() {
     
     const restLabel = dateInfo.restLabel; // 休 / 班（国务院放假）
 
-    // 底色：休=淡蓝，班=淡红，今日=强调，周末=淡灰，平日=浅灰白
-    let cellBg = '#fafafa';
-    let cellBorder = '1px solid #f0f0f0';
-    let dateColor = '#262626';
+    // 现代化底色：使用 CSS 变量和渐变
+    let cellBg = 'var(--calendar-cell-bg, #ffffff)';
+    let cellBorder = '1px solid var(--calendar-cell-border, #f0f0f0)';
+    let dateColor = 'var(--calendar-text-primary, #262626)';
+    let cellShadow = 'var(--calendar-cell-shadow, 0 1px 3px rgba(0, 0, 0, 0.04))';
+    
     if (restLabel === '休') {
-      cellBg = '#e6f7ff';
-      cellBorder = '1px solid #bae7ff';
+      cellBg = 'var(--calendar-rest-bg, linear-gradient(135deg, rgba(22, 119, 255, 0.08) 0%, rgba(22, 119, 255, 0.03) 100%))';
+      cellBorder = '1px solid rgba(22, 119, 255, 0.2)';
       dateColor = '#0958d9';
     } else if (restLabel === '班') {
-      cellBg = '#fff1f0';
-      cellBorder = '1px solid #ffccc7';
+      cellBg = 'var(--calendar-work-bg, linear-gradient(135deg, rgba(255, 77, 79, 0.08) 0%, rgba(255, 77, 79, 0.03) 100%))';
+      cellBorder = '1px solid rgba(255, 77, 79, 0.2)';
       dateColor = '#cf1322';
     } else if (isWeekend && showWeekend) {
-      cellBg = '#f5f5f5';
-      dateColor = '#8c8c8c';
+      cellBg = 'var(--calendar-cell-bg-hover, #fafafa)';
+      dateColor = 'var(--calendar-text-secondary, #8c8c8c)';
     }
+    
+    // 今日特殊高亮
     if (isToday) {
-      cellBg = restLabel === '休' ? '#bae7ff' : restLabel === '班' ? '#ffccc7' : '#e6f4ff';
-      cellBorder = '2px solid #1677ff';
-      dateColor = '#1677ff';
+      cellBg = restLabel === '休' 
+        ? 'linear-gradient(135deg, rgba(22, 119, 255, 0.15) 0%, rgba(22, 119, 255, 0.08) 100%)' 
+        : restLabel === '班' 
+          ? 'linear-gradient(135deg, rgba(255, 77, 79, 0.15) 0%, rgba(255, 77, 79, 0.08) 100%)' 
+          : 'linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.12) 0%, rgba(var(--accent-rgb, 22, 119, 255), 0.05) 100%)';
+      cellBorder = '2px solid var(--accent-primary, #1677ff)';
+      cellShadow = 'var(--calendar-today-shadow, 0 0 0 2px var(--accent-primary, #1677ff), 0 4px 12px rgba(22, 119, 255, 0.15))';
+      dateColor = 'var(--accent-primary, #1677ff)';
+    }
+    
+    // 悬停效果
+    if (isHovered && !isToday) {
+      cellShadow = 'var(--calendar-cell-shadow-hover, 0 4px 16px rgba(0, 0, 0, 0.1))';
     }
 
     return (
       <div
+        className="calendar-cell-modern"
         style={{
           minHeight: '90px',
           padding: '8px 6px',
           display: 'flex',
           flexDirection: 'column',
           gap: '4px',
-          borderRadius: '8px',
+          borderRadius: '12px',
           background: cellBg,
           border: cellBorder,
-          transition: 'border-color .2s, background .2s',
+          boxShadow: cellShadow,
+          transform: isHovered && !isToday ? 'translateY(-2px)' : 'none',
+          cursor: 'pointer',
+        }}
+        onMouseEnter={() => setHoveredCell(dateKey)}
+        onMouseLeave={() => setHoveredCell(null)}
+        onClick={() => {
+          setDayViewDate(date);
+          setViewMode('day');
         }}
       >
         {/* 日期行：左为日期，右为休/班小标 + 日程数 */}
@@ -444,10 +474,12 @@ function Schedule() {
         >
           <span
             style={{
-              fontSize: '15px',
+              fontSize: isToday ? '18px' : '15px',
               fontWeight: isToday ? 700 : 600,
               color: dateColor,
               lineHeight: '24px',
+              transition: 'transform 0.2s ease, font-size 0.2s ease',
+              transform: isHovered ? 'scale(1.1)' : 'scale(1)',
             }}
           >
             {value.date()}
@@ -456,20 +488,28 @@ function Schedule() {
             {restLabel && (
               <span
                 style={{
-                  fontSize: '11px',
+                  fontSize: '10px',
                   fontWeight: 600,
                   color: restLabel === '休' ? '#0958d9' : '#cf1322',
-                  background: restLabel === '休' ? 'rgba(9,88,217,.14)' : 'rgba(207,19,34,.1)',
+                  background: restLabel === '休' ? 'rgba(9,88,217,.12)' : 'rgba(207,19,34,.08)',
                   padding: '2px 6px',
-                  borderRadius: '4px',
-                  lineHeight: '18px',
+                  borderRadius: '6px',
+                  lineHeight: '16px',
+                  backdropFilter: 'blur(6px)',
                 }}
               >
                 {restLabel}
               </span>
             )}
             {daySchedules.length > 0 && (
-              <Badge count={daySchedules.length} size="small" style={{ backgroundColor: '#1677ff' }} />
+              <Badge 
+                count={daySchedules.length} 
+                size="small" 
+                style={{ 
+                  backgroundColor: 'var(--accent-primary, #1677ff)',
+                  boxShadow: '0 2px 6px rgba(var(--accent-rgb, 22, 119, 255), 0.3)',
+                }} 
+              />
             )}
           </Space>
         </div>
@@ -481,7 +521,7 @@ function Schedule() {
               <div
                 style={{
                   fontSize: '10px',
-                  color: '#595959',
+                  color: 'var(--calendar-text-secondary, #8c8c8c)',
                   lineHeight: '16px',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -510,13 +550,14 @@ function Schedule() {
                     fontSize: '10px',
                     lineHeight: '18px',
                     height: '18px',
-                    padding: '0 5px',
-                    borderRadius: '4px',
+                    padding: '0 6px',
+                    borderRadius: '6px',
                     border: 'none',
                     maxWidth: '100%',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
+                    backdropFilter: 'blur(4px)',
                   };
                   if (isJieqi) {
                     return (
@@ -525,7 +566,7 @@ function Schedule() {
                         style={{
                           ...tagStyle,
                           color: '#389e0d',
-                          background: 'rgba(56,158,13,.1)',
+                          background: 'rgba(56,158,13,.12)',
                           display: 'inline-flex',
                           alignItems: 'center',
                         }}
@@ -542,7 +583,7 @@ function Schedule() {
                         style={{
                           ...tagStyle,
                           color: '#0958d9',
-                          background: 'rgba(9,88,217,.12)',
+                          background: 'rgba(9,88,217,.1)',
                           display: 'inline-flex',
                           alignItems: 'center',
                         }}
@@ -557,8 +598,8 @@ function Schedule() {
                       key={index}
                       style={{
                         ...tagStyle,
-                        color: '#595959',
-                        background: 'rgba(0,0,0,.06)',
+                        color: 'var(--calendar-text-secondary, #595959)',
+                        background: 'rgba(0,0,0,.05)',
                         display: 'inline-flex',
                         alignItems: 'center',
                       }}
@@ -570,19 +611,26 @@ function Schedule() {
                 })}
                 {/* 日程用同款 Tag：与节日同一行，不单独占行，文字过长省略 */}
                 {daySchedules.length > 0 && (() => {
-                  const sorted = [...daySchedules].sort((a, b) => (b.priority || 1) - (a.priority || 1));
+                  const sorted = [...daySchedules].sort((a, b) => (b.priority || 0) - (a.priority || 0));
                   const top = sorted[0];
                   const count = daySchedules.length;
                   const label = count === 1 ? (top.title || '未命名日程') : `${top.title || '未命名日程'} 等${count}项`;
-                  let scheduleTagBg = 'rgba(22,119,255,.1)';
-                  let scheduleTagColor = '#1677ff';
-                  if ((top.priority || 1) === 3) {
-                    scheduleTagBg = 'rgba(255,77,79,.12)';
+                  
+                  // 优先级颜色映射
+                  let scheduleTagBg = 'rgba(var(--accent-rgb, 22, 119, 255), 0.1)';
+                  let scheduleTagColor = 'var(--accent-primary, #1677ff)';
+                  let borderLeftColor = 'var(--accent-primary, #1677ff)';
+                  
+                  if ((top.priority || 0) === 3) {
+                    scheduleTagBg = 'rgba(255,77,79,.1)';
                     scheduleTagColor = '#cf1322';
-                  } else if ((top.priority || 1) === 2) {
-                    scheduleTagBg = 'rgba(250,173,20,.15)';
+                    borderLeftColor = '#ff4d4f';
+                  } else if ((top.priority || 0) === 2) {
+                    scheduleTagBg = 'rgba(250,173,20,.12)';
                     scheduleTagColor = '#d48806';
+                    borderLeftColor = '#faad14';
                   }
+                  
                   const tooltipContent = (
                     <div style={{ maxWidth: 320 }}>
                       {sorted.map((schedule) => {
@@ -602,15 +650,17 @@ function Schedule() {
                   return (
                     <Tooltip key="schedule-tag" title={tooltipContent} placement="topLeft">
                       <span
+                        className="schedule-tag-modern"
                         role="button"
                         tabIndex={0}
                         style={{
                           fontSize: '10px',
                           lineHeight: '18px',
                           height: '18px',
-                          padding: '0 5px',
-                          borderRadius: '4px',
+                          padding: '0 6px 0 8px',
+                          borderRadius: '6px',
                           border: 'none',
+                          borderLeft: `3px solid ${borderLeftColor}`,
                           maxWidth: '80px',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -619,10 +669,9 @@ function Schedule() {
                           background: scheduleTagBg,
                           display: 'inline-flex',
                           alignItems: 'center',
-                          cursor: 'pointer',
                         }}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleEdit(top); } }}
-                        onClick={() => handleEdit(top)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleEdit(top); } }}
+                        onClick={(e) => { e.stopPropagation(); handleEdit(top); }}
                       >
                         {label}
                       </span>
@@ -635,6 +684,23 @@ function Schedule() {
         )}
       </div>
     );
+  };
+
+  // 处理日视图中点击创建日程
+  const handleDayViewCreate = ({ date, startTime }) => {
+    setEditingSchedule(null);
+    form.resetFields();
+    form.setFieldsValue({
+      date: dayjs(date),
+      startTime: startTime ? dayjs(startTime) : null,
+      endTime: startTime ? dayjs(startTime).add(1, 'hour') : null,
+      priority: 0,
+      repeat_rule: 'none',
+      repeat_interval: 1,
+      reminder_enabled: false,
+      reminder_minutes: 15,
+    });
+    setModalVisible(true);
   };
 
   // 如果用户未初始化，显示加载状态而不是错误
@@ -683,7 +749,11 @@ function Schedule() {
           items={[
             {
               key: 'calendar',
-              label: t('schedule.calendarView'),
+              label: (
+                <span>
+                  <CalendarOutlined /> {t('schedule.calendarView')}
+                </span>
+              ),
               children: (
                 <>
                   <div style={{ marginBottom: 16 }}>
@@ -699,30 +769,41 @@ function Schedule() {
                   <Calendar
                     fullCellRender={fullCellRender}
                     onSelect={(date) => {
+                      // 点击日期切换到日视图
+                      setDayViewDate(date.toDate());
                       setSelectedDate(date.toDate());
-                      const daySchedules = getSchedulesByDate(date.toDate());
-                      const dateInfo = calendarService.getDateInfo(date.toDate(), {
-                        showLunar,
-                        showHoliday,
-                      });
-                      
-                      let infoText = `这一天有 ${daySchedules.length} 个日程`;
-                      if (dateInfo.lunar && showLunar) {
-                        infoText += `，农历${dateInfo.lunar.fullText}`;
-                      }
-                      if (dateInfo.holidays && dateInfo.holidays.length > 0 && showHoliday) {
-                        infoText += `，${dateInfo.holidays.map(h => h.name).join('、')}`;
-                      }
-                      
-                      message.info(infoText);
                     }}
                   />
                 </>
               ),
             },
             {
+              key: 'day',
+              label: (
+                <span>
+                  <ScheduleOutlined /> 日视图
+                </span>
+              ),
+              children: (
+                <DayView
+                  date={dayViewDate}
+                  schedules={schedules}
+                  onDateChange={(date) => setDayViewDate(date)}
+                  onEventClick={handleEdit}
+                  onCreateEvent={handleDayViewCreate}
+                  calendarService={calendarService}
+                  showLunar={showLunar}
+                  showHoliday={showHoliday}
+                />
+              ),
+            },
+            {
               key: 'list',
-              label: t('schedule.listView'),
+              label: (
+                <span>
+                  <UnorderedListOutlined /> {t('schedule.listView')}
+                </span>
+              ),
               children: (
                 <Table
                   columns={columns}
