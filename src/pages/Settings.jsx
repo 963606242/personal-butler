@@ -844,21 +844,21 @@ export default function Settings() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-        <Title level={2} style={{ margin: 0 }}>{t('settings.title', '设置')}</Title>
+      <div className="settings-header">
+        <Title level={3} style={{ margin: 0 }}>{t('settings.title', '设置')}</Title>
         <Button type="link" icon={<BookOutlined />} onClick={openOnboarding}>
           {t('settings.newbieGuide', '新手教程')}
         </Button>
       </div>
       <Alert
+        className="settings-info-alert"
         type="info"
         showIcon
         message={t('settings.configPriorityTitle', '配置优先于 .env')}
         description={t('settings.configPriorityDesc', '以下内容保存到本地，优先于环境变量。修改后无需重启。')}
-        style={{ marginBottom: 24 }}
       />
       <Form form={form} layout="vertical" onFinish={onFinish}>
-        <Collapse items={collapseItems} defaultActiveKey={['appearance', 'apikeys', 'ai']} />
+        <Collapse className="settings-collapse" items={collapseItems} defaultActiveKey={['appearance', 'apikeys', 'ai']} />
       </Form>
 
       <Modal

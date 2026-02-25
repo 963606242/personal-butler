@@ -182,32 +182,23 @@ function Clothing() {
               filteredClothing.map((item) => (
                 <Col key={item.id} xs={24} sm={12} md={8} lg={6}>
                   <Card
+                    className="clothing-card"
                     hoverable
                     cover={
                       item.image_path ? (
-                        <div style={{ height: 200, overflow: 'hidden', backgroundColor: '#f5f5f5' }}>
+                        <div className="clothing-card-cover">
                           <img
                             src={formatImageSrc(item.image_path)}
                             alt={item.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                             onError={(e) => {
                               e.target.style.display = 'none';
-                              e.target.parentElement.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 48px;">${getCategoryIcon(item.category)}</div>`;
+                              e.target.parentElement.innerHTML = `<span class="clothing-card-icon">${getCategoryIcon(item.category)}</span>`;
                             }}
                           />
                         </div>
                       ) : (
-                        <div
-                          style={{
-                            height: 200,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: 48,
-                            backgroundColor: '#f5f5f5',
-                          }}
-                        >
-                          {getCategoryIcon(item.category)}
+                        <div className="clothing-card-cover">
+                          <span className="clothing-card-icon">{getCategoryIcon(item.category)}</span>
                         </div>
                       )
                     }
@@ -226,26 +217,29 @@ function Clothing() {
                       title={
                         <div>
                           <Text strong>{item.name}</Text>
-                          <Tag
-                            color={WASH_STATUS.find((s) => s.value === item.wash_status)?.color}
-                            style={{ marginLeft: 8 }}
-                          >
-                            {WASH_STATUS.find((s) => s.value === item.wash_status)?.label}
-                          </Tag>
+                          <span className={`clothing-wash-tag clothing-wash-${item.wash_status || 'clean'}`} style={{ marginLeft: 8 }}>
+                            {WASH_STATUS.find((s) => s.value === item.wash_status)?.label || '干净'}
+                          </span>
                         </div>
                       }
                       description={
-                        <div>
-                          <div>
-                            {CLOTHING_CATEGORIES.find((c) => c.value === item.category)?.label}
+                        <div className="clothing-card-meta">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span>{CLOTHING_CATEGORIES.find((c) => c.value === item.category)?.label}</span>
                             {item.color && (
-                              <span style={{ marginLeft: 8 }}>{getColorDisplay(item.color)}</span>
+                              <span className="clothing-color-swatch">
+                                <span 
+                                  className="clothing-color-dot" 
+                                  style={{ backgroundColor: CLOTHING_COLORS.find((c) => c.value === item.color)?.color }}
+                                />
+                                {CLOTHING_COLORS.find((c) => c.value === item.color)?.label}
+                              </span>
                             )}
                           </div>
-                          {item.material && <div style={{ marginTop: 4 }}>材质: {item.material}</div>}
+                          {item.material && <div className="clothing-meta-item">材质: {item.material}</div>}
                           {item.price && (
-                            <div style={{ marginTop: 4, color: '#ff4d4f' }}>
-                              ¥{Number(item.price).toFixed(2)}
+                            <div className="clothing-meta-item">
+                              <span className="clothing-price">¥{Number(item.price).toFixed(2)}</span>
                             </div>
                           )}
                         </div>
@@ -270,44 +264,37 @@ function Clothing() {
             return (
               <Card
                 key={category.value}
+                className="clothing-wardrobe-card"
                 title={
                   <span>
                     {category.icon} {category.label} ({items.length})
                   </span>
                 }
-                style={{ marginBottom: 16 }}
               >
                 <Row gutter={[16, 16]}>
                   {items.map((item) => (
                     <Col key={item.id} xs={12} sm={8} md={6} lg={4}>
                       <Card
+                        className="clothing-mini-card"
                         hoverable
                         size="small"
                         cover={
                           item.image_path ? (
-                            <div style={{ height: 120, overflow: 'hidden', backgroundColor: '#f5f5f5' }}>
+                            <div className="clothing-mini-cover" style={{ position: 'relative' }}>
                               <img
                                 src={formatImageSrc(item.image_path)}
                                 alt={item.name}
-                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                 onError={(e) => {
                                   e.target.style.display = 'none';
-                                  e.target.parentElement.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; font-size: 32px;">${getCategoryIcon(item.category)}</div>`;
+                                  e.target.parentElement.innerHTML = `<span class="clothing-mini-icon">${getCategoryIcon(item.category)}</span>`;
                                 }}
                               />
+                              {item.wash_status === 'dirty' && <div className="clothing-dirty-indicator" />}
                             </div>
                           ) : (
-                            <div
-                              style={{
-                                height: 120,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: 32,
-                                backgroundColor: '#f5f5f5',
-                              }}
-                            >
-                              {getCategoryIcon(item.category)}
+                            <div className="clothing-mini-cover" style={{ position: 'relative' }}>
+                              <span className="clothing-mini-icon">{getCategoryIcon(item.category)}</span>
+                              {item.wash_status === 'dirty' && <div className="clothing-dirty-indicator" />}
                             </div>
                           )
                         }
@@ -315,14 +302,9 @@ function Clothing() {
                       >
                         <Card.Meta
                           title={
-                            <div>
-                              <Text ellipsis style={{ fontSize: 12 }}>
-                                {item.name}
-                              </Text>
-                              {item.wash_status === 'dirty' && (
-                                <Badge status="error" style={{ marginLeft: 4 }} />
-                              )}
-                            </div>
+                            <Text ellipsis style={{ fontSize: 12 }}>
+                              {item.name}
+                            </Text>
                           }
                         />
                       </Card>
@@ -342,7 +324,7 @@ function Clothing() {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="clothing-header">
         <Title level={2}>服装管理</Title>
         <Space>
           <Button icon={<RobotOutlined />} onClick={() => navigate('/ai', { state: { carry: ['clothing'] } })}>
@@ -354,7 +336,7 @@ function Clothing() {
         </Space>
       </div>
 
-      <Card style={{ marginBottom: 16 }}>
+      <Card className="clothing-filter-card">
         <Space wrap>
           <Search
             placeholder="搜索服装名称"
@@ -409,6 +391,7 @@ function Clothing() {
       </Card>
 
       <Tabs
+        className="clothing-tabs"
         items={[
           ...tabItems,
           {

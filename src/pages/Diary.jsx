@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Space, Typography, Popconfirm, Spin, Calendar, Badge, Input, App } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined, SoundOutlined, VideoCameraOutlined, SearchOutlined, RobotOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PictureOutlined, SoundOutlined, VideoCameraOutlined, SearchOutlined, RobotOutlined, CalendarOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useDiaryStore from '../stores/diaryStore';
 import useUserStore from '../stores/userStore';
@@ -13,6 +13,15 @@ import { isAIConfigured } from '../services/ai-providers';
 
 const { Title, Text, Paragraph } = Typography;
 const logger = getLogger();
+
+const MOOD_LABELS = {
+  happy: '😊 开心',
+  sad: '😢 难过',
+  angry: '😠 生气',
+  calm: '😌 平静',
+  excited: '🤩 兴奋',
+  tired: '😴 疲惫',
+};
 
 function Diary() {
   const { message: messageApi } = App.useApp();
@@ -88,40 +97,58 @@ function Diary() {
     const dayEntries = entries.filter((e) => dayjs(e.date).format('YYYY-MM-DD') === dateStr);
     if (dayEntries.length === 0) return null;
     return (
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+      <ul className="diary-calendar-dot">
         {dayEntries.slice(0, 3).map((e) => (
           <li key={e.id}>
             <Badge status="success" text={e.title || '无标题'} />
           </li>
         ))}
-        {dayEntries.length > 3 && <li>...</li>}
+        {dayEntries.length > 3 && <li><Text type="secondary" style={{ fontSize: 11 }}>...</Text></li>}
       </ul>
     );
   };
 
   const selectedDateEntries = entries.filter((e) => dayjs(e.date).format('YYYY-MM-DD') === selectedDate.format('YYYY-MM-DD'));
 
+  const getMoodClass = (mood) => mood && MOOD_LABELS[mood] ? mood : 'default';
+
   if (loading && entries.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '40px 0' }}>
-        <Spin size="large" />
-      </div>
+      <Card style={{ borderRadius: 16 }}>
+        <div style={{ textAlign: 'center', padding: 40 }}>
+          <Spin size="large" />
+          <Text type="secondary" style={{ display: 'block', marginTop: 16 }}>
+            {t('diary.loading', '正在加载...')}
+          </Text>
+        </div>
+      </Card>
     );
   }
 
   return (
     <div>
-      <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
-        <Title level={2} style={{ margin: 0 }}>
+      {/* Header */}
+      <div className="diary-header">
+        <Title level={3} style={{ margin: 0 }}>
           {t('diary.pageTitle', '日记小记')}
         </Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} style={{ borderRadius: 10 }}>
           {t('diary.newEntry', '新建日记')}
         </Button>
-      </Space>
+      </div>
 
-      <Card title="AI 回顾" style={{ marginBottom: 16 }} extra={isAIConfigured() ? null : <Text type="secondary">需在设置中配置 AI</Text>}>
-        <Space.Compact style={{ width: '100%', marginBottom: 8 }}>
+      {/* AI Report */}
+      <Card
+        className="diary-ai-card"
+        title={
+          <Space>
+            <RobotOutlined style={{ color: 'var(--accent-primary, #1677ff)' }} />
+            <span>AI 回顾</span>
+          </Space>
+        }
+        extra={isAIConfigured() ? null : <Text type="secondary">需在设置中配置 AI</Text>}
+      >
+        <Space.Compact className="diary-ai-input" style={{ width: '100%' }}>
           <Input
             placeholder="例如：上周五做了什么、昨天做了什么、本周一"
             value={aiQuestion}
@@ -132,21 +159,27 @@ function Diary() {
             生成报告
           </Button>
         </Space.Compact>
-        {aiReport ? <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>{aiReport}</Paragraph> : null}
+        {aiReport && (
+          <div className="diary-ai-report">
+            <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>{aiReport}</Paragraph>
+          </div>
+        )}
       </Card>
 
-      <Space style={{ marginBottom: 8 }}>
+      {/* Search */}
+      <div className="diary-search-bar">
         <Input
           prefix={<SearchOutlined />}
           placeholder="搜索日记（标题、内容、图片分析、录音转写）"
           value={searchKeyword}
           onChange={(e) => setSearchKeyword(e.target.value)}
           allowClear
-          style={{ width: 280 }}
+          style={{ width: 320, maxWidth: '100%' }}
         />
-      </Space>
+      </div>
 
-      <Card style={{ marginBottom: 16 }}>
+      {/* Calendar */}
+      <Card className="diary-calendar-card">
         <Calendar
           fullscreen={false}
           onSelect={handleDateSelect}
@@ -155,66 +188,89 @@ function Diary() {
         />
       </Card>
 
-      <Card title={selectedDate.format('YYYY年MM月DD日')}>
+      {/* Date Entries */}
+      <Card
+        className="diary-date-card"
+        title={
+          <span className="diary-date-title">
+            <CalendarOutlined />
+            {selectedDate.format('YYYY年MM月DD日')}
+          </span>
+        }
+      >
         {selectedDateEntries.length === 0 ? (
           <FriendlyEmpty description={t('diary.noEntries', '这一天还没有记录，点击「新建日记」开始记录吧')} />
         ) : (
           <Space direction="vertical" style={{ width: '100%' }} size="middle">
-            {selectedDateEntries.map((entry) => (
-              <Card
-                key={entry.id}
-                hoverable
-                actions={[
-                  <EditOutlined key="edit" onClick={() => handleEdit(entry)} />,
-                  <Popconfirm
-                    key="delete"
-                    title={t('diary.deleteConfirm', '确定删除这条日记吗？')}
-                    onConfirm={() => handleDelete(entry.id)}
-                    okText="确定"
-                    cancelText="取消"
-                  >
-                    <DeleteOutlined />
-                  </Popconfirm>,
-                ]}
-              >
-                <Card.Meta
-                  title={
-                    <Space>
-                      {entry.title || '无标题'}
-                      {entry.mood && <Badge status="processing" text={entry.mood} />}
-                    </Space>
-                  }
-                  description={
-                    <div>
-                      <Paragraph ellipsis={{ rows: 3 }} style={{ marginBottom: 8 }}>
-                        {entry.content}
-                      </Paragraph>
-                      <Space size="small" wrap>
-                        {entry.images && entry.images.length > 0 && (
-                          <Text type="secondary">
-                            <PictureOutlined /> {entry.images.length} 张图片
-                          </Text>
-                        )}
-                        {entry.audio_path && (
-                          <Text type="secondary">
-                            <SoundOutlined /> 语音
-                          </Text>
-                        )}
-                        {entry.video_path && (
-                          <Text type="secondary">
-                            <VideoCameraOutlined /> 视频
-                          </Text>
-                        )}
-                        {entry.location && <Text type="secondary">📍 {entry.location}</Text>}
-                        {entry.tags && entry.tags.length > 0 && (
-                          <Text type="secondary">🏷️ {entry.tags.join(', ')}</Text>
+            {selectedDateEntries.map((entry) => {
+              const moodClass = getMoodClass(entry.mood);
+              return (
+                <Card
+                  key={entry.id}
+                  className={`diary-entry-card diary-entry-card-${moodClass}`}
+                  hoverable
+                  actions={[
+                    <EditOutlined key="edit" onClick={() => handleEdit(entry)} />,
+                    <Popconfirm
+                      key="delete"
+                      title={t('diary.deleteConfirm', '确定删除这条日记吗？')}
+                      onConfirm={() => handleDelete(entry.id)}
+                      okText="确定"
+                      cancelText="取消"
+                    >
+                      <DeleteOutlined />
+                    </Popconfirm>,
+                  ]}
+                >
+                  <Card.Meta
+                    title={
+                      <Space>
+                        <span>{entry.title || '无标题'}</span>
+                        {entry.mood && MOOD_LABELS[entry.mood] && (
+                          <span className={`diary-mood-badge diary-mood-${entry.mood}`}>
+                            {MOOD_LABELS[entry.mood]}
+                          </span>
                         )}
                       </Space>
-                    </div>
-                  }
-                />
-              </Card>
-            ))}
+                    }
+                    description={
+                      <div>
+                        <Paragraph ellipsis={{ rows: 3 }} style={{ marginBottom: 8 }}>
+                          {entry.content}
+                        </Paragraph>
+                        <div className="diary-media-tags">
+                          {entry.images && entry.images.length > 0 && (
+                            <span className="diary-media-tag">
+                              <PictureOutlined /> {entry.images.length} 张图片
+                            </span>
+                          )}
+                          {entry.audio_path && (
+                            <span className="diary-media-tag">
+                              <SoundOutlined /> 语音
+                            </span>
+                          )}
+                          {entry.video_path && (
+                            <span className="diary-media-tag">
+                              <VideoCameraOutlined /> 视频
+                            </span>
+                          )}
+                          {entry.location && (
+                            <span className="diary-media-tag diary-location-tag">
+                              📍 {entry.location}
+                            </span>
+                          )}
+                          {entry.tags && entry.tags.length > 0 && entry.tags.map((tag) => (
+                            <span key={tag} className="diary-tag-label">
+                              🏷️ {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    }
+                  />
+                </Card>
+              );
+            })}
           </Space>
         )}
       </Card>

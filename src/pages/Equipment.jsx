@@ -155,7 +155,7 @@ function Equipment() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div className="equipment-header">
         <Title level={2}>装备管理</Title>
         <Space>
           <Button icon={<RobotOutlined />} onClick={() => navigate('/ai', { state: { carry: ['equipment'] } })}>
@@ -168,7 +168,7 @@ function Equipment() {
       </div>
 
       {/* 搜索和筛选 */}
-      <Card style={{ marginBottom: 16 }}>
+      <Card className="equipment-filter-card">
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} md={8}>
             <Search
@@ -214,7 +214,7 @@ function Equipment() {
 
       {/* 装备列表 */}
       {filteredEquipment.length === 0 && !loading ? (
-        <Card>
+        <Card className="equipment-empty-card">
           <FriendlyEmpty
             context={equipment.length === 0 ? 'equipment' : 'equipmentNoResult'}
             onAction={equipment.length === 0 ? handleCreate : undefined}
@@ -228,10 +228,11 @@ function Equipment() {
             return (
               <Col key={item.id} xs={24} sm={12} md={8} lg={6}>
                 <Card
+                  className="equipment-card"
                   hoverable
                   cover={
                     item.image_path ? (
-                      <div style={{ height: 200, overflow: 'hidden', background: '#f5f5f5' }}>
+                      <div className="equipment-card-cover">
                         <img
                           src={
                             item.image_path.startsWith('data:')
@@ -241,26 +242,15 @@ function Equipment() {
                               : item.image_path
                           }
                           alt={item.name}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           onError={(e) => {
-                            // 如果加载失败，显示占位符
                             e.target.style.display = 'none';
-                            e.target.parentElement.innerHTML = `<div style="height: 200px; display: flex; align-items: center; justify-content: center; background: #f5f5f5; font-size: 48px;">${category.icon}</div>`;
+                            e.target.parentElement.innerHTML = `<div class="equipment-card-icon">${category.icon}</div>`;
                           }}
                         />
                       </div>
                     ) : (
-                      <div
-                        style={{
-                          height: 200,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: '#f5f5f5',
-                          fontSize: 48,
-                        }}
-                      >
-                        {category.icon}
+                      <div className="equipment-card-cover">
+                        <span className="equipment-card-icon">{category.icon}</span>
                       </div>
                     )
                   }
@@ -283,47 +273,40 @@ function Equipment() {
                     title={
                       <Space>
                         <span>{item.name}</span>
-                        <Tag color={status.color}>{status.label}</Tag>
+                        <span className={`equipment-status-tag equipment-status-${item.status || 'normal'}`}>
+                          {status.label}
+                        </span>
                       </Space>
                     }
                     description={
-                      <div>
-                        <div style={{ marginTop: 8 }}>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {category.label}
-                          </Text>
+                      <div className="equipment-card-meta">
+                        <div className="equipment-meta-item">
+                          <span className="equipment-category-icon">{category.icon}</span>
+                          <span>{category.label}</span>
                         </div>
                         {item.brand && (
-                          <div style={{ marginTop: 4 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              品牌：{item.brand}
-                            </Text>
+                          <div className="equipment-meta-item">
+                            品牌：{item.brand}
                           </div>
                         )}
                         {item.model && (
-                          <div style={{ marginTop: 4 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              型号：{item.model}
-                            </Text>
+                          <div className="equipment-meta-item">
+                            型号：{item.model}
                           </div>
                         )}
                         {item.purchase_date && (
-                          <div style={{ marginTop: 4 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              购买日期：{dayjs(item.purchase_date).format('YYYY-MM-DD')}
-                            </Text>
+                          <div className="equipment-meta-item">
+                            购买：{dayjs(item.purchase_date).format('YYYY-MM-DD')}
                           </div>
                         )}
                         {item.price && (
-                          <div style={{ marginTop: 4 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              价格：¥{item.price.toFixed(2)}
-                            </Text>
+                          <div className="equipment-meta-item">
+                            <span className="equipment-price">¥{item.price.toFixed(2)}</span>
                           </div>
                         )}
                         {item.notes && (
-                          <div style={{ marginTop: 8 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }} ellipsis={{ tooltip: item.notes }}>
+                          <div className="equipment-meta-item" style={{ marginTop: 8 }}>
+                            <Text type="secondary" ellipsis={{ tooltip: item.notes }}>
                               {item.notes}
                             </Text>
                           </div>

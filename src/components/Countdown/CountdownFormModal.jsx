@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, Select, DatePicker, InputNumber, Space } from 'antd';
+import { Modal, Form, Input, Select, DatePicker, InputNumber, Space, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { COUNTDOWN_TYPES, REMINDER_DAYS_OPTIONS, REPEAT_UNIT_OPTIONS } from '../../stores/countdownStore';
 
@@ -34,6 +34,7 @@ export default function CountdownFormModal({ open, editing, onCancel, onOk, form
 
   return (
     <Modal
+      className="countdown-form-modal"
       title={editing ? '编辑' : '新建'}
       open={open}
       onCancel={onCancel}
@@ -94,7 +95,7 @@ export default function CountdownFormModal({ open, editing, onCancel, onOk, form
                     style={{ width: 80 }}
                   />
                 </Form.Item>
-                <span style={{ color: 'rgba(0,0,0,0.45)', fontSize: 12 }}>重复</span>
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>重复</Typography.Text>
               </Space>
             ) : null
           }

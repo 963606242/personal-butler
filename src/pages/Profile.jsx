@@ -151,20 +151,30 @@ function Profile() {
 
   if (!isInitialized) {
     return (
-      <Card>
+      <Card className="profile-init-card">
         <Title level={3}>首次使用</Title>
         <p>请先初始化应用...</p>
       </Card>
     );
   }
 
+  // 计算 BMI 状态
+  const getBmiStatus = (bmi) => {
+    if (bmi < 18.5) return { label: '偏瘦', class: 'profile-bmi-status-underweight' };
+    if (bmi < 24) return { label: '正常', class: 'profile-bmi-status-normal' };
+    if (bmi < 28) return { label: '偏胖', class: 'profile-bmi-status-overweight' };
+    return { label: '肥胖', class: 'profile-bmi-status-obese' };
+  };
+
   return (
     <div>
-      <Title level={2}>
-        <UserOutlined /> 个人信息
-      </Title>
+      <div className="profile-header">
+        <Title level={2}>
+          <UserOutlined style={{ marginRight: 8 }} /> 个人信息
+        </Title>
+      </div>
 
-      <Card style={{ marginTop: 24 }}>
+      <Card className="profile-main-card">
         <Tabs
           defaultActiveKey="basic"
           items={[
@@ -181,6 +191,7 @@ function Profile() {
                   <Form
                     form={form}
                     layout="vertical"
+                    className="profile-form"
                     onFinish={(values) => handleSubmit(values, 'basic')}
                     onFinishFailed={(errorInfo) => {
                       console.error('[Profile] 表单验证失败:', errorInfo);
@@ -303,17 +314,26 @@ function Profile() {
                     </Form.Item>
                   </Form>
 
-                  {userProfile && userProfile.height && userProfile.weight && (
-                    <Card style={{ marginTop: 24 }}>
-                      <Title level={4}>健康指标</Title>
-                      <p>
-                        BMI: {(
-                          userProfile.weight /
-                          Math.pow(userProfile.height / 100, 2)
-                        ).toFixed(2)}
-                      </p>
-                    </Card>
-                  )}
+                  {userProfile && userProfile.height && userProfile.weight && (() => {
+                    const bmi = userProfile.weight / Math.pow(userProfile.height / 100, 2);
+                    const status = getBmiStatus(bmi);
+                    return (
+                      <Card className="profile-bmi-card">
+                        <Title level={4}>健康指标</Title>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+                          <div>
+                            <div className="profile-bmi-value">{bmi.toFixed(1)}</div>
+                            <div className="profile-bmi-label">BMI 指数</div>
+                          </div>
+                          <div>
+                            <span className={`profile-bmi-status ${status.class}`}>
+                              {status.label}
+                            </span>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })()}
                 </>
               ),
             },
@@ -329,6 +349,7 @@ function Profile() {
                 <Form
                   form={form}
                   layout="vertical"
+                  className="profile-form"
                   onFinish={(values) => handleSubmit(values, 'work')}
                   onFinishFailed={(errorInfo) => {
                     console.error('[Profile] 表单验证失败:', errorInfo);
@@ -384,7 +405,7 @@ function Profile() {
                     name="workDays"
                     label="工作日"
                   >
-                    <Checkbox.Group>
+                    <Checkbox.Group className="profile-workdays">
                       <Checkbox value="1">周一</Checkbox>
                       <Checkbox value="2">周二</Checkbox>
                       <Checkbox value="3">周三</Checkbox>
@@ -458,6 +479,7 @@ function Profile() {
                 <Form
                   form={form}
                   layout="vertical"
+                  className="profile-form profile-interests"
                   onFinish={(values) => handleSubmit(values, 'interests')}
                   onFinishFailed={(errorInfo) => {
                     console.error('[Profile] 表单验证失败:', errorInfo);

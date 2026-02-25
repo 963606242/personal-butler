@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { App, Card, Tabs, Input, Button, Space, Typography, Tag } from 'antd';
+import { App, Card, Tabs, Input, Button, Space, Typography, Tag, Checkbox, Select } from 'antd';
 import { TeamOutlined, ExperimentOutlined, DollarOutlined, BgColorsOutlined, MessageOutlined } from '@ant-design/icons';
 import relationship from 'relationship-ts';
 import { LOTTERY_LIST, QUOTE_LIST } from '../constants/fun-tools';
@@ -13,13 +13,12 @@ function FunTools() {
   const [relationInput, setRelationInput] = useState('');
   const [relationResult, setRelationResult] = useState(null);
   const [relationReverse, setRelationReverse] = useState(false);
-  const [relationSex, setRelationSex] = useState(1); // 1男 0女 -1未知
+  const [relationSex, setRelationSex] = useState(1);
   const [lottery, setLottery] = useState(null);
   const [diceResult, setDiceResult] = useState(null);
   const [coinResult, setCoinResult] = useState(null);
   const [quoteText, setQuoteText] = useState(null);
 
-  // 亲戚计算器
   const handleRelationQuery = useCallback(() => {
     const text = (relationInput || '').trim();
     if (!text) {
@@ -35,26 +34,22 @@ function FunTools() {
     }
   }, [relationInput, relationReverse, relationSex, t]);
 
-  // 抽签
   const handleLottery = useCallback(() => {
     const idx = Math.floor(Math.random() * LOTTERY_LIST.length);
     setLottery(LOTTERY_LIST[idx]);
     message.success(t('fun.lottery.drew', '已抽签～'));
   }, [t]);
 
-  // 掷骰子
   const handleDice = useCallback(() => {
     const n = Math.floor(Math.random() * 6) + 1;
     setDiceResult(n);
   }, []);
 
-  // 抛硬币
   const handleCoin = useCallback(() => {
     const side = Math.random() < 0.5 ? 'heads' : 'tails';
     setCoinResult(side);
   }, []);
 
-  // 随机一句
   const handleQuote = useCallback(() => {
     const idx = Math.floor(Math.random() * QUOTE_LIST.length);
     setQuoteText(QUOTE_LIST[idx]);
@@ -70,7 +65,7 @@ function FunTools() {
         </span>
       ),
       children: (
-        <Card size="small" title={t('fun.relationship.title', '关系链 → 称谓')}>
+        <Card className="fun-tool-card" size="small" title={t('fun.relationship.title', '关系链 → 称谓')}>
           <Paragraph type="secondary">{t('fun.relationship.desc', '输入亲戚关系链，如：爸爸的妈妈、妈妈的哥哥的老婆')}</Paragraph>
           <Space.Compact style={{ width: '100%', maxWidth: 400 }}>
             <Input
@@ -78,29 +73,35 @@ function FunTools() {
               value={relationInput}
               onChange={(e) => setRelationInput(e.target.value)}
               onPressEnter={handleRelationQuery}
+              style={{ borderRadius: '10px 0 0 10px' }}
             />
-            <Button type="primary" onClick={handleRelationQuery}>
+            <Button type="primary" onClick={handleRelationQuery} style={{ borderRadius: '0 10px 10px 0' }}>
               {t('fun.relationship.query', '查询')}
             </Button>
           </Space.Compact>
           <div style={{ marginTop: 12 }}>
             <Space>
-              <label>
-                <input type="checkbox" checked={relationReverse} onChange={(e) => setRelationReverse(e.target.checked)} />
-                <span style={{ marginLeft: 6 }}>{t('fun.relationship.reverse', '对方称呼我')}</span>
-              </label>
-              <select value={relationSex} onChange={(e) => setRelationSex(Number(e.target.value))} style={{ padding: '4px 8px' }}>
-                <option value={1}>{t('fun.relationship.sexMale', '本人男')}</option>
-                <option value={0}>{t('fun.relationship.sexFemale', '本人女')}</option>
-                <option value={-1}>{t('fun.relationship.sexUnknown', '未知')}</option>
-              </select>
+              <Checkbox checked={relationReverse} onChange={(e) => setRelationReverse(e.target.checked)}>
+                {t('fun.relationship.reverse', '对方称呼我')}
+              </Checkbox>
+              <Select
+                value={relationSex}
+                onChange={(v) => setRelationSex(v)}
+                size="small"
+                style={{ width: 100 }}
+                options={[
+                  { value: 1, label: t('fun.relationship.sexMale', '本人男') },
+                  { value: 0, label: t('fun.relationship.sexFemale', '本人女') },
+                  { value: -1, label: t('fun.relationship.sexUnknown', '未知') },
+                ]}
+              />
             </Space>
           </div>
           {relationResult !== null && (
-            <div style={{ marginTop: 16 }}>
+            <div className="fun-relation-results">
               <Text type="secondary">{t('fun.relationship.result', '称谓')}：</Text>
               <div style={{ marginTop: 8 }}>
-                {relationResult.length ? relationResult.map((r, i) => <Tag key={i} color="blue">{r}</Tag>) : <Text type="secondary">{t('fun.relationship.noResult', '未找到')}</Text>}
+                {relationResult.length ? relationResult.map((r, i) => <Tag key={i} color="blue" style={{ fontSize: 14, padding: '4px 12px' }}>{r}</Tag>) : <Text type="secondary">{t('fun.relationship.noResult', '未找到')}</Text>}
               </div>
             </div>
           )}
@@ -115,16 +116,16 @@ function FunTools() {
         </span>
       ),
       children: (
-        <Card size="small" title={t('fun.lottery.title', '抽一签（娱乐向）')}>
+        <Card className="fun-tool-card" size="small" title={t('fun.lottery.title', '抽一签（娱乐向）')}>
           <Paragraph type="secondary">{t('fun.lottery.desc', '随机抽一签，看看签文与解签，仅供娱乐')}</Paragraph>
-          <Button type="primary" size="large" onClick={handleLottery} style={{ marginBottom: 16 }}>
+          <Button type="primary" size="large" onClick={handleLottery} style={{ marginBottom: 16, borderRadius: 10 }}>
             {t('fun.lottery.button', '抽签')}
           </Button>
           {lottery && (
-            <Card type="inner" size="small">
+            <Card className="fun-lottery-card" type="inner" size="small">
               <div style={{ marginBottom: 8 }}>
                 <Text type="secondary">{t('fun.lottery.no', '签号')}：</Text>
-                <Tag>{lottery.id}</Tag>
+                <Tag color="orange">{lottery.id}</Tag>
               </div>
               <Paragraph strong style={{ fontSize: 16 }}>{lottery.verse}</Paragraph>
               <div>
@@ -144,13 +145,13 @@ function FunTools() {
         </span>
       ),
       children: (
-        <Card size="small" title={t('fun.dice.title', '掷骰子')}>
+        <Card className="fun-tool-card" size="small" title={t('fun.dice.title', '掷骰子')}>
           <Paragraph type="secondary">{t('fun.dice.desc', '点一下，掷出 1～6，纯娱乐')}</Paragraph>
-          <Button type="primary" size="large" onClick={handleDice} style={{ marginBottom: 16 }}>
+          <Button type="primary" size="large" onClick={handleDice} style={{ marginBottom: 16, borderRadius: 10 }}>
             {t('fun.dice.button', '掷一次')}
           </Button>
           {diceResult !== null && (
-            <div style={{ fontSize: 48, fontWeight: 'bold', color: '#1890ff' }}>
+            <div className="fun-dice-result">
               🎲 {diceResult}
             </div>
           )}
@@ -165,15 +166,15 @@ function FunTools() {
         </span>
       ),
       children: (
-        <Card size="small" title={t('fun.coin.title', '抛硬币')}>
+        <Card className="fun-tool-card" size="small" title={t('fun.coin.title', '抛硬币')}>
           <Paragraph type="secondary">{t('fun.coin.desc', '正面还是反面？交给命运吧')}</Paragraph>
-          <Button type="primary" size="large" onClick={handleCoin} style={{ marginBottom: 16 }}>
+          <Button type="primary" size="large" onClick={handleCoin} style={{ marginBottom: 16, borderRadius: 10 }}>
             {t('fun.coin.button', '抛一次')}
           </Button>
           {coinResult !== null && (
-            <Tag color="blue" style={{ fontSize: 20, padding: '8px 16px' }}>
+            <div className="fun-coin-result">
               {coinResult === 'heads' ? '🪙 ' + t('fun.coin.heads', '正面') : '🪙 ' + t('fun.coin.tails', '反面')}
-            </Tag>
+            </div>
           )}
         </Card>
       ),
@@ -186,13 +187,13 @@ function FunTools() {
         </span>
       ),
       children: (
-        <Card size="small" title={t('fun.quote.title', '随机一句')}>
+        <Card className="fun-tool-card" size="small" title={t('fun.quote.title', '随机一句')}>
           <Paragraph type="secondary">{t('fun.quote.desc', '毒鸡汤 / 鸡汤 / 搞笑，来一句')}</Paragraph>
-          <Button type="primary" size="large" onClick={handleQuote} style={{ marginBottom: 16 }}>
+          <Button type="primary" size="large" onClick={handleQuote} style={{ marginBottom: 16, borderRadius: 10 }}>
             {t('fun.quote.button', '来一句')}
           </Button>
           {quoteText && (
-            <Card type="inner" size="small">
+            <Card className="fun-result-card" type="inner" size="small">
               <Paragraph strong style={{ fontSize: 16, marginBottom: 0 }}>{quoteText}</Paragraph>
             </Card>
           )}
@@ -203,9 +204,10 @@ function FunTools() {
 
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <Title level={2}>
-          <ExperimentOutlined /> {t('fun.pageTitle', '趣味工具')}
+      <div className="fun-header">
+        <Title level={3} style={{ margin: 0 }}>
+          <ExperimentOutlined style={{ marginRight: 8 }} />
+          {t('fun.pageTitle', '趣味工具')}
         </Title>
         <Text type="secondary">{t('fun.pageDesc', '亲戚计算器、每日签到、抽签解签，提升 DAU 的轻量娱乐')}</Text>
       </div>

@@ -227,7 +227,7 @@ function News() {
   const spinBlock = (tip = '加载中...') => (
     <div style={{ textAlign: 'center', padding: 24 }}>
       <Spin size="small" />
-      <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(0,0,0,0.45)' }}>{tip}</div>
+      <div style={{ marginTop: 8 }}><Text type="secondary" style={{ fontSize: 12 }}>{tip}</Text></div>
     </div>
   );
 
@@ -236,14 +236,14 @@ function News() {
     if (spinning) return spinBlock();
     if (!items?.length) return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无" />;
     return (
-      <div style={{ display: 'flex', overflowX: 'auto', gap: 12, paddingBottom: 8 }}>
+      <div className="news-headline-scroll">
         {items.slice(0, 10).map((item, idx) => (
           <Card
             key={item.url || idx}
             size="small"
             hoverable
-            bodyStyle={{ padding: 10 }}
-            style={{ flex: '0 0 220px', minWidth: 220, cursor: 'pointer' }}
+            className="news-headline-item"
+            styles={{ body: { padding: 10 } }}
             onClick={() => item.url && window.open(item.url, '_blank', 'noopener,noreferrer')}
           >
             <div style={{ display: 'flex', gap: 8 }}>
@@ -255,7 +255,7 @@ function News() {
               </div>
             </div>
             <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Tag style={{ margin: 0, fontSize: 11 }}>{item.source}</Tag>
+              <Tag className="news-source-tag">{item.source}</Tag>
               <Text type="secondary" style={{ fontSize: 11 }}>{formatDate(item.publishedAt)}</Text>
             </div>
           </Card>
@@ -274,9 +274,9 @@ function News() {
         itemLayout="horizontal"
         dataSource={items}
         renderItem={(item) => (
-          <List.Item style={{ padding: '8px 0', alignItems: 'flex-start' }}>
+          <List.Item className="news-list-item" style={{ alignItems: 'flex-start' }}>
             <List.Item.Meta
-              avatar={renderNewsThumb(item, 64)}
+              avatar={<span className="news-thumb">{renderNewsThumb(item, 64)}</span>}
               title={
                 <a href={item.url} target="_blank" rel="noopener noreferrer">
                   {item.title}
@@ -290,7 +290,7 @@ function News() {
                     </Text>
                   )}
                   <div style={{ marginTop: 4 }}>
-                    <Tag style={{ marginRight: 4 }}>{item.source}</Tag>
+                    <Tag className="news-source-tag" style={{ marginRight: 4 }}>{item.source}</Tag>
                     <Text type="secondary" style={{ fontSize: 12 }}>{formatDate(item.publishedAt)}</Text>
                   </div>
                 </div>
@@ -315,8 +315,8 @@ function News() {
             <Card
               size="small"
               hoverable
-              bodyStyle={{ padding: 8 }}
-              style={{ height: '100%' }}
+              className="news-grid-card"
+              styles={{ body: { padding: 8 } }}
               onClick={() => {
                 if (item.url) {
                   window.open(item.url, '_blank', 'noopener,noreferrer');
@@ -324,7 +324,7 @@ function News() {
               }}
             >
               <Space align="start" size={8}>
-                {renderNewsThumb(item, 56)}
+                <span className="news-thumb">{renderNewsThumb(item, 56)}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <Text ellipsis={{ rows: 2 }} style={{ display: 'block', marginBottom: 4 }}>
                     {item.title}
@@ -335,7 +335,7 @@ function News() {
                     </Text>
                   )}
                   <div style={{ marginTop: 4 }}>
-                    <Tag style={{ marginRight: 4 }}>{item.source}</Tag>
+                    <Tag className="news-source-tag" style={{ marginRight: 4 }}>{item.source}</Tag>
                     <Text type="secondary" style={{ fontSize: 11 }}>
                       {formatDate(item.publishedAt)}
                     </Text>
@@ -361,13 +361,11 @@ function News() {
             key={item.url || idx}
             size="small"
             hoverable
-            bodyStyle={{ padding: 10 }}
+            className="news-cloud-card"
+            styles={{ body: { padding: 10 } }}
             style={{
-              flex: '0 0 240px',
-              minWidth: 200,
-              maxWidth: 280,
+              borderLeftColor: `${CLOUD_BORDER_COLORS[idx % CLOUD_BORDER_COLORS.length]} !important`,
               borderLeft: `3px solid ${CLOUD_BORDER_COLORS[idx % CLOUD_BORDER_COLORS.length]}`,
-              cursor: 'pointer',
             }}
             onClick={() => item.url && window.open(item.url, '_blank', 'noopener,noreferrer')}
           >
@@ -379,6 +377,7 @@ function News() {
                   src={item.urlToImage}
                   icon={<FileTextOutlined />}
                   onError={() => false}
+                  className="news-thumb"
                   style={{ flexShrink: 0 }}
                 />
               ) : null}
@@ -392,7 +391,7 @@ function News() {
                   </Text>
                 )}
                 <Space size={4} style={{ flexWrap: 'wrap' }}>
-                  <Tag style={{ margin: 0, fontSize: 11 }}>{item.source}</Tag>
+                  <Tag className="news-source-tag">{item.source}</Tag>
                   <Text type="secondary" style={{ fontSize: 11 }}>{formatDate(item.publishedAt)}</Text>
                 </Space>
               </div>
@@ -457,18 +456,18 @@ function News() {
           />
           <Card
             size="small"
+            className="news-headline-card"
             title="头条"
             extra={
               <Button type="link" size="small" icon={<ReloadOutlined />} onClick={handleRefreshCn} loading={cnHeadlineSpin}>
                 刷新
               </Button>
             }
-            bodyStyle={{ padding: '8px 12px' }}
-            style={{ marginBottom: 16 }}
+            styles={{ body: { padding: '8px 12px' } }}
           >
             {renderHeadlineCards(headlinesCn, cnHeadlineSpin)}
           </Card>
-          <div style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+      <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
             <Text type="secondary">分类</Text>
             <Space wrap size="small">
               {cnCategories.map((c) => (
@@ -476,6 +475,7 @@ function News() {
                   key={c.value}
                   type={selectedCategoryCn === c.value ? 'primary' : 'default'}
                   size="small"
+                  style={{ borderRadius: 8 }}
                   onClick={() => handleCategoryCn(c.value)}
                   loading={categoryLoading === `cn_${c.value}`}
                 >
@@ -533,6 +533,7 @@ function News() {
           )}
           <Card
             size="small"
+            className="news-headline-card"
             title="头条"
             extra={
               <Button
@@ -546,12 +547,11 @@ function News() {
                 刷新
               </Button>
             }
-            bodyStyle={{ padding: '8px 12px' }}
-            style={{ marginBottom: 16 }}
+            styles={{ body: { padding: '8px 12px' } }}
           >
             {renderHeadlineCards(headlinesIntl, intlHeadlineSpin)}
           </Card>
-          <div style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+          <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
             <Text type="secondary">分类</Text>
             <Space wrap size="small">
               {INTL_CATEGORIES.map((c) => (
@@ -559,6 +559,7 @@ function News() {
                   key={c.value}
                   type={selectedCategoryIntl === c.value ? 'primary' : 'default'}
                   size="small"
+                  style={{ borderRadius: 8 }}
                   onClick={() => handleCategoryIntl(c.value)}
                   loading={categoryLoading === `intl_${c.value}`}
                   disabled={!isIntlApiConfigured()}
@@ -636,6 +637,7 @@ function News() {
           {dailyReport && (
             <Card
               size="small"
+              className="news-report-card"
               title={
                 <Space size="small">
                   {dailyReport.type === 'morning' ? (
@@ -653,7 +655,7 @@ function News() {
                     if (!news?.length) return null;
                     const info = CN_CATEGORIES.find((c) => c.value === cat) || INTL_CATEGORIES.find((c) => c.value === cat);
                     return (
-                      <div key={cat} style={{ marginBottom: 16 }}>
+                      <div key={cat} className="news-report-section">
                         <Text strong style={{ display: 'block', marginBottom: 8 }}>
                           {info?.icon || '📰'} {info?.label || cat}
                         </Text>
@@ -704,8 +706,8 @@ function News() {
 
   return (
     <div>
-      <div style={{ marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-        <Title level={2} style={{ margin: 0 }}>新闻资讯</Title>
+      <div className="news-header">
+        <Title level={3} style={{ margin: 0 }}>新闻资讯</Title>
         <Space size="small">
           <Text type="secondary" style={{ fontSize: 12 }}>配图</Text>
           <Switch
@@ -731,6 +733,7 @@ function News() {
       </div>
 
       <Tabs
+        className="news-tabs"
         items={tabItems}
         activeKey={activeTab}
         onChange={(k) => {

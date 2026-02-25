@@ -448,7 +448,14 @@
     "reminder1": "1 day before",
     "reminder3": "3 days before",
     "reminder7": "7 days before",
-    "reminder30": "30 days before"
+    "reminder30": "30 days before",
+    "statTotal": "Total",
+    "statUpcoming": "Upcoming",
+    "statToday": "Today",
+    "statPast": "Past",
+    "filterLabel": "Type",
+    "filterAll": "All",
+    "daysUnit": "days"
   }
 }
 

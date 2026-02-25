@@ -24,6 +24,7 @@ import {
   DeleteOutlined,
   StarOutlined,
   ThunderboltOutlined,
+  SkinOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useOutfitStore from '../stores/outfitStore';
@@ -145,9 +146,12 @@ function Outfits() {
 
   if (!isInitialized || loading) {
     return (
-      <div style={{ textAlign: 'center', padding: 50 }}>
-        <Spin size="large" />
-      </div>
+      <Card style={{ borderRadius: 16 }}>
+        <div style={{ textAlign: 'center', padding: 50 }}>
+          <Spin size="large" />
+          <Text type="secondary" style={{ display: 'block', marginTop: 16 }}>加载中...</Text>
+        </div>
+      </Card>
     );
   }
 
@@ -166,6 +170,7 @@ function Outfits() {
                 return (
                   <Col key={outfit.id} xs={24} sm={12} md={8}>
                     <Card
+                      className="outfit-card"
                       hoverable
                       actions={[
                         <EditOutlined key="edit" onClick={() => handleEdit(outfit)} />,
@@ -180,13 +185,13 @@ function Outfits() {
                     >
                       <Card.Meta
                         title={
-                          <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                             <Text strong>{outfit.name || '未命名搭配'}</Text>
                             {outfit.rating && (
                               <Rate
                                 disabled
                                 value={outfit.rating}
-                                style={{ marginLeft: 8, fontSize: 14 }}
+                                style={{ fontSize: 13 }}
                               />
                             )}
                           </div>
@@ -194,22 +199,22 @@ function Outfits() {
                         description={
                           <div>
                             {outfit.occasion && (
-                              <Tag color="blue" style={{ marginBottom: 8 }}>
+                              <Tag className="outfit-occasion-tag" style={{ marginBottom: 8 }}>
                                 {outfit.occasion}
                               </Tag>
                             )}
                             {outfit.worn_date && (
-                              <div style={{ marginBottom: 8 }}>
-                                穿着日期: {dayjs(outfit.worn_date).format('YYYY-MM-DD')}
-                              </div>
+                              <Text type="secondary" style={{ display: 'block', marginBottom: 8, fontSize: 12 }}>
+                                📅 穿着日期: {dayjs(outfit.worn_date).format('YYYY-MM-DD')}
+                              </Text>
                             )}
                             <div>
-                              <Text type="secondary">包含 {outfitClothing.length} 件服装：</Text>
-                              <div style={{ marginTop: 8 }}>
+                              <Text type="secondary" style={{ fontSize: 12 }}>包含 {outfitClothing.length} 件服装：</Text>
+                              <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                                 {outfitClothing.map((c) => (
-                                  <Tag key={c.id} style={{ marginBottom: 4 }}>
+                                  <span key={c.id} className="outfit-clothing-tag">
                                     {c.name}
-                                  </Tag>
+                                  </span>
                                 ))}
                               </div>
                             </div>
@@ -229,13 +234,17 @@ function Outfits() {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Title level={2}>搭配管理</Title>
+      {/* Header */}
+      <div className="outfit-header">
+        <Title level={3} style={{ margin: 0 }}>
+          <SkinOutlined style={{ marginRight: 8 }} />
+          搭配管理
+        </Title>
         <Space>
-          <Button icon={<ThunderboltOutlined />} onClick={handleRecommend} loading={loadingRecommendations}>
+          <Button icon={<ThunderboltOutlined />} onClick={handleRecommend} loading={loadingRecommendations} style={{ borderRadius: 10 }}>
             智能推荐
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} style={{ borderRadius: 10 }}>
             创建搭配
           </Button>
         </Space>
@@ -243,8 +252,9 @@ function Outfits() {
 
       <Tabs items={tabItems} />
 
-      {/* 创建/编辑搭配模态框 */}
+      {/* Create/Edit modal */}
       <Modal
+        className="outfit-form-modal"
         title={editingOutfit ? '编辑搭配' : '创建搭配'}
         open={modalVisible}
         onOk={() => form.submit()}
@@ -297,8 +307,9 @@ function Outfits() {
         </Form>
       </Modal>
 
-      {/* 推荐搭配模态框 */}
+      {/* Recommend modal */}
       <Modal
+        className="outfit-recommend-modal"
         title="智能推荐搭配"
         open={recommendModalVisible}
         onCancel={() => setRecommendModalVisible(false)}
@@ -314,17 +325,18 @@ function Outfits() {
               return (
                 <Col key={index} xs={24} sm={12} md={8}>
                   <Card
+                    className="outfit-recommend-card"
                     hoverable
                     onClick={() => handleSelectRecommendation(rec)}
                     style={{ cursor: 'pointer' }}
                   >
                     <div>
                       <Text strong>推荐搭配 {index + 1}</Text>
-                      <div style={{ marginTop: 8 }}>
+                      <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {recClothing.map((c) => (
-                          <Tag key={c.id} style={{ marginBottom: 4 }}>
+                          <span key={c.id} className="outfit-clothing-tag">
                             {c.name}
-                          </Tag>
+                          </span>
                         ))}
                       </div>
                       <Button

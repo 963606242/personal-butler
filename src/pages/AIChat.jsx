@@ -25,6 +25,7 @@ import {
   CheckCircleOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
+import ReactMarkdown from 'react-markdown';
 import { chat, getActiveProvider, isAIConfigured } from '../services/ai-providers';
 import { getLogger } from '../services/logger-client';
 import useAiChatStore from '../stores/aiChatStore';
@@ -201,7 +202,12 @@ export default function AIChat() {
   if (!configured && provider !== 'ollama') {
     return (
       <div>
-        <Title level={2}>{getAssistantName()}</Title>
+        <div className="ai-header">
+          <Title level={3} style={{ margin: 0 }}>
+            <RobotOutlined style={{ marginRight: 8 }} />
+            {getAssistantName()}
+          </Title>
+        </div>
         <Alert
           type="warning"
           showIcon
@@ -215,6 +221,7 @@ export default function AIChat() {
               中配置对应的 API Key。
             </span>
           }
+          style={{ borderRadius: 12 }}
         />
       </div>
     );
@@ -222,29 +229,35 @@ export default function AIChat() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
+      {/* Header */}
+      <div className="ai-header">
         <div>
-          <Title level={2} style={{ margin: 0 }}>{getAssistantName()}</Title>
-          <Text type="secondary" style={{ display: 'block' }}>
+          <Title level={3} style={{ margin: 0 }}>
+            <RobotOutlined style={{ marginRight: 8 }} />
+            {getAssistantName()}
+          </Title>
+          <Text type="secondary" style={{ display: 'block', marginTop: 4 }}>
             当前：{PROVIDER_LABELS[provider] || provider}
             {provider === 'ollama' && '（本地 Ollama，无需 Key）'}
           </Text>
         </div>
         {messages.length > 0 && (
           <Popconfirm title="确定清空所有聊天记录？" onConfirm={handleClear} okText="确定" cancelText="取消">
-            <Button icon={<DeleteOutlined />} danger>清空记录</Button>
+            <Button icon={<DeleteOutlined />} danger style={{ borderRadius: 10 }}>清空记录</Button>
           </Popconfirm>
         )}
       </div>
 
-      <Space direction="vertical" style={{ marginBottom: 16 }} size="small">
-        <Space wrap>
+      {/* Actions */}
+      <div className="ai-actions-bar">
+        <Space wrap size="small">
           <Tooltip title="按结构化格式生成多条日程与习惯，保存时可批量勾选">
             <Button
               icon={<ThunderboltOutlined />}
               onClick={handleDailyPlan}
               loading={planLoading || loading}
               disabled={!isAIConfigured()}
+              style={{ borderRadius: 10 }}
             >
               生成每日计划建议
             </Button>
@@ -254,6 +267,7 @@ export default function AIChat() {
               icon={<CalendarOutlined />}
               onClick={openSaveAsSchedule}
               disabled={!lastAssistant}
+              style={{ borderRadius: 10 }}
             >
               保存为日程
             </Button>
@@ -263,34 +277,44 @@ export default function AIChat() {
               icon={<CheckCircleOutlined />}
               onClick={openSaveAsHabit}
               disabled={!lastAssistant}
+              style={{ borderRadius: 10 }}
             >
               保存为习惯
             </Button>
           </Tooltip>
         </Space>
-        <Text type="secondary" style={{ fontSize: 12 }}>
+        <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: 8 }}>
           生成每日计划 → AI 返回多条日程/习惯 → 保存时勾选要写入的项；普通对话则按单条解析保存。
         </Text>
-      </Space>
+      </div>
 
-      <Card loading={loadingHistory}>
+      {/* Chat */}
+      <Card className="ai-chat-card" loading={loadingHistory}>
         <List
           dataSource={messages}
           locale={{ emptyText: '发送一条消息开始对话' }}
           renderItem={(m) => (
-            <List.Item key={m.id}>
+            <List.Item key={m.id} className={`ai-msg-item ${m.role === 'user' ? 'ai-msg-user' : 'ai-msg-assistant'}`}>
               <List.Item.Meta
                 avatar={
                   <Avatar
                     icon={m.role === 'user' ? <UserOutlined /> : <RobotOutlined />}
-                    style={{ backgroundColor: m.role === 'user' ? '#1890ff' : '#52c41a' }}
+                    style={{
+                      backgroundColor: m.role === 'user' ? 'var(--accent-primary, #1890ff)' : '#52c41a',
+                    }}
                   />
                 }
-                title={m.role === 'user' ? '你' : '助手'}
+                title={m.role === 'user' ? '你' : getAssistantName()}
                 description={
-                  <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                    {m.content}
-                  </div>
+                  m.role === 'assistant' ? (
+                    <div className="ai-markdown">
+                      <ReactMarkdown>{m.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                      {m.content}
+                    </div>
+                  )
                 }
               />
             </List.Item>
@@ -298,9 +322,9 @@ export default function AIChat() {
         />
         <div ref={listRef} />
         <Collapse
+          className="ai-carry-collapse"
           size="small"
           defaultActiveKey={[]}
-          style={{ marginTop: 16, marginBottom: 16 }}
           items={[
             {
               key: 'carry',
@@ -331,7 +355,7 @@ export default function AIChat() {
             },
           ]}
         />
-        <div style={{ marginTop: 0 }}>
+        <div className="ai-input-area">
           <Space.Compact style={{ width: '100%' }}>
             <TextArea
               value={input}

@@ -268,6 +268,7 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
 
   return (
     <Modal
+      className="diary-form-modal"
       title={editingEntry ? '编辑日记' : '新建日记'}
       open={visible}
       onCancel={onCancel}
@@ -301,20 +302,18 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
             </Space>
             {imageAnalysis ? <Text type="secondary" style={{ display: 'block', marginTop: 4 }}>分析结果：{imageAnalysis.slice(0, 80)}…</Text> : null}
             {images.length > 0 && (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              <div className="diary-image-grid">
                 {images.map((img, idx) => (
-                  <div key={idx} style={{ position: 'relative', width: 100, height: 100 }}>
+                  <div key={idx} className="diary-image-item">
                     <img
                       src={img}
                       alt={`图片 ${idx + 1}`}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }}
                     />
                     <Button
                       type="text"
                       danger
                       icon={<DeleteOutlined />}
                       size="small"
-                      style={{ position: 'absolute', top: 0, right: 0 }}
                       onClick={() => setImages(images.filter((_, i) => i !== idx))}
                     />
                   </div>

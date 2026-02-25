@@ -10,9 +10,7 @@ import {
   Row,
   Col,
   Spin,
-  Empty,
   Tag,
-  Divider,
   message,
   Alert,
   Result,
@@ -122,16 +120,24 @@ function Weather() {
 
   if (!isInitialized || loading) {
     return (
-      <div style={{ textAlign: 'center', padding: 50 }}>
-        <Spin size="large" />
-      </div>
+      <Card style={{ borderRadius: 16 }}>
+        <div style={{ textAlign: 'center', padding: 50 }}>
+          <Spin size="large" />
+          <Text type="secondary" style={{ display: 'block', marginTop: 16 }}>正在加载天气...</Text>
+        </div>
+      </Card>
     );
   }
 
   if (!isApiKeyConfigured()) {
     return (
       <div>
-        <Title level={2}>天气服务</Title>
+        <div className="weather-header">
+          <Title level={3} style={{ margin: 0 }}>
+            <CloudOutlined style={{ marginRight: 8 }} />
+            天气服务
+          </Title>
+        </div>
         <Alert
           message="天气 API 未配置"
           description={
@@ -144,6 +150,7 @@ function Weather() {
           }
           type="warning"
           showIcon
+          style={{ borderRadius: 12 }}
           action={<Button size="small" onClick={() => navigate('/settings')}>去设置</Button>}
         />
       </div>
@@ -152,19 +159,24 @@ function Weather() {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Title level={2}>天气服务</Title>
+      {/* Header */}
+      <div className="weather-header">
+        <Title level={3} style={{ margin: 0 }}>
+          <CloudOutlined style={{ marginRight: 8 }} />
+          天气服务
+        </Title>
         <Space>
-          <Button icon={<RobotOutlined />} onClick={() => navigate('/ai', { state: { carry: ['weather'] } })}>
+          <Button icon={<RobotOutlined />} onClick={() => navigate('/ai', { state: { carry: ['weather'] } })} style={{ borderRadius: 10 }}>
             问 AI
           </Button>
-          <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={loading}>
+          <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={loading} style={{ borderRadius: 10 }}>
             刷新
           </Button>
         </Space>
       </div>
 
-      <Card style={{ marginBottom: 16 }}>
+      {/* Search */}
+      <Card className="weather-search-card">
         <Space direction="vertical" style={{ width: '100%' }}>
           <Text strong>搜索城市</Text>
           <AutoComplete
@@ -180,115 +192,113 @@ function Weather() {
             <Input
               prefix={<SearchOutlined />}
               placeholder="输入城市名搜索，如北京、上海、New York"
+              style={{ borderRadius: 12 }}
             />
           </AutoComplete>
         </Space>
       </Card>
 
+      {/* Current city */}
       {currentCity && (
-        <Card style={{ marginBottom: 16 }}>
+        <Card className="weather-city-bar" size="small" styles={{ body: { padding: '10px 16px' } }}>
           <Space>
-            <EnvironmentOutlined />
+            <EnvironmentOutlined style={{ color: 'var(--accent-primary, #1677ff)' }} />
             <Text strong>当前城市：</Text>
             <Text>{currentCity.displayName || `${currentCity.name}, ${currentCity.country}`}</Text>
           </Space>
         </Card>
       )}
 
+      {/* Current weather */}
       {loading && !currentWeather ? (
-        <Card>
+        <Card style={{ borderRadius: 16 }}>
           <div style={{ textAlign: 'center', padding: 40 }}>
             <Spin size="large" />
-            <div style={{ marginTop: 16 }}>正在加载天气数据...</div>
+            <Text type="secondary" style={{ display: 'block', marginTop: 16 }}>正在加载天气数据...</Text>
           </div>
         </Card>
       ) : currentWeather ? (
         <>
-          <Card style={{ marginBottom: 16 }}>
-            <Row gutter={[16, 16]}>
+          <Card className="weather-current-card">
+            <Row gutter={[24, 16]}>
               <Col xs={24} md={12}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 64, fontWeight: 'bold', lineHeight: 1 }}>
+                <div className="weather-temp-display">
+                  <div className="weather-temp-number">
                     {currentWeather.temp}°
                   </div>
-                  <div style={{ fontSize: 18, color: '#666', marginTop: 8 }}>
+                  <div className="weather-temp-desc">
                     {currentWeather.description}
                   </div>
-                  <div style={{ marginTop: 16 }}>
+                  <div className="weather-icon-wrap">
                     <img
                       src={getWeatherIcon(currentWeather.icon)}
                       alt={currentWeather.description}
-                      style={{ width: 80, height: 80 }}
                     />
                   </div>
                 </div>
               </Col>
               <Col xs={24} md={12}>
-                <Space direction="vertical" style={{ width: '100%' }}>
-                  <div>
-                    <Text type="secondary">体感温度：</Text>
+                <div style={{ padding: '8px 0' }}>
+                  <div className="weather-detail-item">
+                    <Text type="secondary">体感温度</Text>
                     <Text strong>{currentWeather.feelsLike}°C</Text>
                   </div>
-                  <div>
-                    <Text type="secondary">湿度：</Text>
+                  <div className="weather-detail-item">
+                    <Text type="secondary">湿度</Text>
                     <Text strong>{currentWeather.humidity}%</Text>
                   </div>
-                  <div>
-                    <Text type="secondary">气压：</Text>
+                  <div className="weather-detail-item">
+                    <Text type="secondary">气压</Text>
                     <Text strong>{currentWeather.pressure} hPa</Text>
                   </div>
                   {currentWeather.windSpeed > 0 && (
-                    <div>
-                      <Text type="secondary">风速：</Text>
-                      <Text strong>
-                        {currentWeather.windSpeed} m/s ({getWindDirection(currentWeather.windDeg)})
-                      </Text>
+                    <div className="weather-detail-item">
+                      <Text type="secondary">风速</Text>
+                      <Text strong>{currentWeather.windSpeed} m/s ({getWindDirection(currentWeather.windDeg)})</Text>
                     </div>
                   )}
                   {currentWeather.visibility && (
-                    <div>
-                      <Text type="secondary">能见度：</Text>
+                    <div className="weather-detail-item">
+                      <Text type="secondary">能见度</Text>
                       <Text strong>{currentWeather.visibility} km</Text>
                     </div>
                   )}
-                  <Divider />
-                  <div>
-                    <Text type="secondary">日出：</Text>
-                    <Text strong>{dayjs(currentWeather.sunrise).format('HH:mm')}</Text>
+                  <div className="weather-sun-row">
+                    <div>
+                      <Text type="secondary">🌅 日出 </Text>
+                      <Text strong>{dayjs(currentWeather.sunrise).format('HH:mm')}</Text>
+                    </div>
+                    <div>
+                      <Text type="secondary">🌇 日落 </Text>
+                      <Text strong>{dayjs(currentWeather.sunset).format('HH:mm')}</Text>
+                    </div>
                   </div>
-                  <div>
-                    <Text type="secondary">日落：</Text>
-                    <Text strong>{dayjs(currentWeather.sunset).format('HH:mm')}</Text>
-                  </div>
-                </Space>
+                </div>
               </Col>
             </Row>
           </Card>
 
+          {/* Forecast */}
           {forecast.length > 0 && (
-            <Card title="天气预报（5天）">
-              <Row gutter={[16, 16]}>
+            <Card className="weather-forecast-card" title="天气预报（5天）">
+              <Row gutter={[12, 12]}>
                 {forecast
-                  .filter((item, index) => index % 8 === 0) // 每天取一个时间点（每3小时一次，8次=24小时）
+                  .filter((item, index) => index % 8 === 0)
                   .slice(0, 5)
                   .map((item, index) => (
-                    <Col key={index} xs={24} sm={12} md={8} lg={4}>
-                      <Card size="small">
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>
-                            {dayjs(item.date).format('MM/DD HH:mm')}
-                          </div>
-                          <img
-                            src={getWeatherIcon(item.icon)}
-                            alt={item.description}
-                            style={{ width: 50, height: 50 }}
-                          />
-                          <div style={{ fontSize: 18, fontWeight: 'bold', marginTop: 8 }}>
-                            {item.temp}°
-                          </div>
-                          <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>
-                            {item.description}
-                          </div>
+                    <Col key={index} xs={12} sm={8} md={6} lg={4}>
+                      <Card size="small" className="weather-forecast-item" styles={{ body: { padding: 12 } }}>
+                        <div className="weather-forecast-date">
+                          {dayjs(item.date).format('MM/DD HH:mm')}
+                        </div>
+                        <div className="weather-forecast-icon">
+                          <img src={getWeatherIcon(item.icon)} alt={item.description} />
+                        </div>
+                        <div className="weather-forecast-temp">
+                          {item.temp}°
+                        </div>
+                        <div className="weather-forecast-desc">
+                          {item.description}
                         </div>
                       </Card>
                     </Col>
@@ -298,7 +308,7 @@ function Weather() {
           )}
         </>
       ) : !loading ? (
-        <Card>
+        <Card style={{ borderRadius: 16 }}>
           <Result
             status="warning"
             title="无法获取天气数据"
@@ -310,13 +320,10 @@ function Weather() {
                   <li>API Key 超过了免费额度限制</li>
                   <li>网络连接问题</li>
                 </ul>
-                <p style={{ marginTop: 16 }}>
-                  请检查 <code>.env</code> 文件中的 <code>VITE_WEATHER_API_KEY</code> 配置是否正确
-                </p>
               </div>
             }
             extra={
-              <Button type="primary" onClick={handleRefresh}>
+              <Button type="primary" onClick={handleRefresh} style={{ borderRadius: 10 }}>
                 重试
               </Button>
             }

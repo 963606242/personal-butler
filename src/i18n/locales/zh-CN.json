@@ -448,7 +448,14 @@
     "reminder1": "提前 1 天",
     "reminder3": "提前 3 天",
     "reminder7": "提前 7 天",
-    "reminder30": "提前 30 天"
+    "reminder30": "提前 30 天",
+    "statTotal": "全部事件",
+    "statUpcoming": "即将到来",
+    "statToday": "就是今天",
+    "statPast": "已过期",
+    "filterLabel": "类别",
+    "filterAll": "全部",
+    "daysUnit": "天"
   }
 }
 
