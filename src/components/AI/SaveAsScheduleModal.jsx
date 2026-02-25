@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { Modal, Form, Input, DatePicker, TimePicker, message } from 'antd';
+import { Modal, Form, Input, DatePicker, TimePicker, message, Tag } from 'antd';
 import dayjs from 'dayjs';
 import useScheduleStore from '../../stores/scheduleStore';
+import { getScheduleConflicts } from '../../utils/schedule-conflict';
 import { getLogger } from '../../services/logger-client';
 
 const { TextArea } = Input;
@@ -10,6 +11,7 @@ const logger = getLogger();
 export default function SaveAsScheduleModal({ open, initialTitle, initialNotes, onSuccess, onCancel }) {
   const [form] = Form.useForm();
   const createSchedule = useScheduleStore((s) => s.createSchedule);
+  const getSchedulesByDate = useScheduleStore((s) => s.getSchedulesByDate);
 
   useEffect(() => {
     if (open) {
@@ -33,6 +35,30 @@ export default function SaveAsScheduleModal({ open, initialTitle, initialNotes, 
       const end = v.endTime
         ? d.hour(v.endTime.hour()).minute(v.endTime.minute()).second(0).millisecond(0).toDate()
         : null;
+
+      // ===== 冲突检测 =====
+      if (start && end) {
+        const existingInstances = getSchedulesByDate(d.toDate());
+        const candidate = { start_time: start.getTime(), end_time: end.getTime() };
+        const conflicts = getScheduleConflicts(existingInstances, candidate);
+
+        if (conflicts.length > 0) {
+          const conflictTitles = conflicts.map((c) => c.title).join('、');
+          const ok = await new Promise((resolve) => {
+            Modal.confirm({
+              title: '时间冲突',
+              content: `与已有日程「${conflictTitles}」时间重叠，是否仍要保存？`,
+              okText: '仍要保存',
+              cancelText: '返回修改',
+              onOk: () => resolve(true),
+              onCancel: () => resolve(false),
+            });
+          });
+          if (!ok) return;
+        }
+      }
+
+      // ===== 执行保存 =====
       await createSchedule({
         title: v.title,
         date: d.toDate(),

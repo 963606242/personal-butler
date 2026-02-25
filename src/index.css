@@ -14,7 +14,7 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -85,14 +85,14 @@ body {
 [data-theme='dark'] {
   --calendar-cell-bg: #1f1f1f;
   --calendar-cell-bg-hover: #262626;
-  --calendar-cell-border: #303030;
-  --calendar-text-primary: #e8e8e8;
-  --calendar-text-secondary: #999;
-  --calendar-rest-bg: linear-gradient(135deg, rgba(22, 119, 255, 0.15) 0%, rgba(22, 119, 255, 0.06) 100%);
-  --calendar-work-bg: linear-gradient(135deg, rgba(255, 77, 79, 0.15) 0%, rgba(255, 77, 79, 0.06) 100%);
-  --calendar-today-shadow: 0 0 0 2px var(--accent-primary, #1677ff), 0 4px 12px rgba(22, 119, 255, 0.25);
-  --calendar-cell-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  --calendar-cell-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --calendar-cell-border: #404040;
+  --calendar-text-primary: #f5f5f5;
+  --calendar-text-secondary: #b3b3b3;
+  --calendar-rest-bg: linear-gradient(135deg, rgba(22, 119, 255, 0.2) 0%, rgba(22, 119, 255, 0.08) 100%);
+  --calendar-work-bg: linear-gradient(135deg, rgba(255, 77, 79, 0.2) 0%, rgba(255, 77, 79, 0.08) 100%);
+  --calendar-today-shadow: 0 0 0 2px var(--accent-primary, #1677ff), 0 4px 12px rgba(22, 119, 255, 0.3);
+  --calendar-cell-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --calendar-cell-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 /* 全局按钮、卡片等交互更柔和 */
@@ -488,6 +488,826 @@ body {
 
 .schedule-tag-modern:active {
   transform: scale(0.96);
+}
+
+/* ============================================
+   日历视图容器和工具栏
+   ============================================ */
+
+.calendar-view-container {
+  position: relative;
+  /* 日历视图使用思源黑体，清晰易读 */
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* 日历视图暗色模式字体优化 - 增加字重提升可读性 */
+[data-theme='dark'] .calendar-view-container {
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 日历工具栏 */
+.calendar-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.06) 0%, rgba(114, 46, 209, 0.04) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(var(--accent-rgb, 22, 119, 255), 0.08);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+[data-theme='dark'] .calendar-toolbar {
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.1) 0%, rgba(114, 46, 209, 0.06) 100%);
+  border-color: rgba(var(--accent-rgb, 22, 119, 255), 0.15);
+}
+
+.calendar-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.calendar-toolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+/* ============================================
+   全屏模式
+   ============================================ */
+
+.calendar-fullscreen {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  background: var(--calendar-cell-bg, #ffffff);
+  padding: 16px;
+  overflow: auto;
+  animation: fullscreenIn 0.3s ease;
+}
+
+[data-theme='dark'] .calendar-fullscreen {
+  background: #141414;
+}
+
+@keyframes fullscreenIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.calendar-fullscreen .calendar-toolbar {
+  margin-bottom: 20px;
+}
+
+.calendar-fullscreen .week-view-container {
+  height: calc(100vh - 120px);
+}
+
+.calendar-fullscreen .week-day-cell {
+  min-height: 120px;
+}
+
+.fullscreen-hint {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  border-radius: 20px;
+  font-size: 12px;
+  opacity: 0.8;
+  z-index: 1001;
+  animation: hintFade 3s ease forwards;
+}
+
+@keyframes hintFade {
+  0%, 70% { opacity: 0.8; }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+/* ============================================
+   周视图样式
+   ============================================ */
+
+.week-view-container {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--calendar-cell-border, #f0f0f0);
+  background: var(--calendar-cell-bg, #ffffff);
+}
+
+[data-theme='dark'] .week-view-container {
+  border-color: #404040;
+  background: #1f1f1f;
+}
+
+.week-view-header {
+  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.08) 0%, rgba(114, 46, 209, 0.05) 100%);
+  border-bottom: 1px solid var(--calendar-cell-border, #f0f0f0);
+}
+
+[data-theme='dark'] .week-view-header {
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.15) 0%, rgba(114, 46, 209, 0.1) 100%);
+  border-bottom-color: #404040;
+}
+
+.week-view-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--calendar-text-primary, #262626);
+}
+
+[data-theme='dark'] .week-view-title {
+  color: #f5f5f5;
+  font-weight: 500;
+}
+
+.week-view-range {
+  margin-left: 12px;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--calendar-text-secondary, #8c8c8c);
+}
+
+.week-view-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--calendar-cell-border, #f0f0f0);
+}
+
+[data-theme='dark'] .week-view-grid {
+  background: #404040;
+}
+
+.week-day-cell {
+  background: var(--calendar-cell-bg, #ffffff);
+  padding: 12px;
+  min-height: 110px;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+[data-theme='dark'] .week-day-cell {
+  background: #1f1f1f;
+}
+
+.week-day-cell:hover {
+  background: rgba(var(--accent-rgb, 22, 119, 255), 0.04);
+  box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb, 22, 119, 255), 0.15);
+}
+
+[data-theme='dark'] .week-day-cell:hover {
+  background: rgba(var(--accent-rgb, 22, 119, 255), 0.08);
+}
+
+.week-day-cell.is-today {
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.1) 0%, rgba(var(--accent-rgb, 22, 119, 255), 0.05) 100%);
+  box-shadow: inset 0 0 0 2px var(--accent-primary, #1677ff);
+}
+
+[data-theme='dark'] .week-day-cell.is-today {
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.2) 0%, rgba(var(--accent-rgb, 22, 119, 255), 0.1) 100%);
+}
+
+.week-day-cell.is-weekend {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='dark'] .week-day-cell.is-weekend {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* 周视图日期头部 */
+.week-day-header {
+  text-align: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='dark'] .week-day-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.week-day-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--calendar-text-secondary, #8c8c8c);
+  margin-bottom: 6px;
+}
+
+[data-theme='dark'] .week-day-name {
+  color: #a6a6a6;
+}
+
+.week-day-num {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--calendar-text-primary, #262626);
+  line-height: 1.2;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-theme='dark'] .week-day-num {
+  color: #f5f5f5;
+  font-weight: 500;
+}
+
+.week-day-num.today {
+  color: var(--accent-primary, #1677ff);
+}
+
+[data-theme='dark'] .week-day-num.today {
+  color: #4096ff;
+}
+
+.week-rest-label {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1.2;
+}
+
+.week-rest-label.off {
+  color: #0958d9;
+  background: rgba(9, 88, 217, 0.15);
+}
+
+.week-rest-label.work {
+  color: #cf1322;
+  background: rgba(207, 19, 34, 0.12);
+}
+
+[data-theme='dark'] .week-rest-label.off {
+  color: #69b1ff;
+  background: rgba(64, 150, 255, 0.2);
+}
+
+[data-theme='dark'] .week-rest-label.work {
+  color: #ff7875;
+  background: rgba(255, 77, 79, 0.2);
+}
+
+.week-day-lunar {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--calendar-text-secondary, #8c8c8c);
+  margin-top: 4px;
+}
+
+[data-theme='dark'] .week-day-lunar {
+  color: #a6a6a6;
+}
+
+/* 周视图内容区域 */
+.week-day-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.week-holiday-tag {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--calendar-text-secondary, #595959);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.week-holiday-tag.off {
+  background: rgba(9, 88, 217, 0.12);
+  color: #0958d9;
+}
+
+[data-theme='dark'] .week-holiday-tag {
+  background: rgba(255, 255, 255, 0.1);
+  color: #d9d9d9;
+  font-weight: 400;
+}
+
+[data-theme='dark'] .week-holiday-tag.off {
+  background: rgba(64, 150, 255, 0.2);
+  color: #69b1ff;
+}
+
+.week-schedule-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid var(--accent-primary, #1677ff);
+  background: rgba(var(--accent-rgb, 22, 119, 255), 0.1);
+  color: var(--accent-primary, #1677ff);
+}
+
+.week-schedule-item:hover {
+  background: rgba(var(--accent-rgb, 22, 119, 255), 0.18);
+  transform: translateX(2px);
+}
+
+[data-theme='dark'] .week-schedule-item {
+  background: rgba(var(--accent-rgb, 22, 119, 255), 0.18);
+  color: #69b1ff;
+  font-weight: 400;
+}
+
+[data-theme='dark'] .week-schedule-item:hover {
+  background: rgba(var(--accent-rgb, 22, 119, 255), 0.28);
+}
+
+.week-schedule-item.priority-3 {
+  border-left-color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.1);
+  color: #cf1322;
+}
+
+[data-theme='dark'] .week-schedule-item.priority-3 {
+  background: rgba(255, 77, 79, 0.2);
+  color: #ff7875;
+}
+
+.week-schedule-item.priority-2 {
+  border-left-color: #faad14;
+  background: rgba(250, 173, 20, 0.1);
+  color: #d48806;
+}
+
+[data-theme='dark'] .week-schedule-item.priority-2 {
+  background: rgba(250, 173, 20, 0.2);
+  color: #ffc53d;
+}
+
+.week-schedule-time {
+  font-size: 11px;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.week-schedule-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.week-more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent-primary, #1677ff);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.12) 0%, rgba(var(--accent-rgb, 22, 119, 255), 0.06) 100%);
+  border: 1px solid rgba(var(--accent-rgb, 22, 119, 255), 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.week-more-btn:hover {
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.2) 0%, rgba(var(--accent-rgb, 22, 119, 255), 0.12) 100%);
+  transform: scale(1.05);
+}
+
+[data-theme='dark'] .week-more-btn {
+  color: #69b1ff;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.2) 0%, rgba(var(--accent-rgb, 22, 119, 255), 0.1) 100%);
+  border-color: rgba(var(--accent-rgb, 22, 119, 255), 0.3);
+}
+
+/* ============================================
+   周视图响应式
+   ============================================ */
+
+@media (max-width: 768px) {
+  .calendar-toolbar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .calendar-toolbar-left {
+    gap: 8px;
+  }
+
+  .week-view-header {
+    padding: 12px 14px;
+  }
+
+  .week-view-title {
+    font-size: 16px;
+  }
+
+  .week-view-range {
+    font-size: 13px;
+    margin-left: 8px;
+  }
+
+  .week-day-cell {
+    padding: 10px 8px;
+    min-height: 100px;
+  }
+
+  .week-day-name {
+    font-size: 12px;
+  }
+
+  .week-day-num {
+    font-size: 20px;
+  }
+
+  .week-day-lunar {
+    font-size: 11px;
+  }
+
+  .week-holiday-tag {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  .week-schedule-item {
+    padding: 4px 8px;
+    font-size: 12px;
+    border-left-width: 3px;
+  }
+
+  .week-schedule-time {
+    font-size: 10px;
+  }
+
+  .week-more-btn {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .calendar-fullscreen {
+    padding: 12px;
+  }
+
+  .calendar-fullscreen .week-day-cell {
+    min-height: 120px;
+  }
+
+  .calendar-fullscreen .week-day-num {
+    font-size: 28px;
+  }
+
+  .calendar-fullscreen .week-schedule-item {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-toolbar {
+    padding: 8px 10px;
+  }
+
+  .week-view-grid {
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .week-day-cell {
+    padding: 8px 6px;
+    min-height: 90px;
+  }
+
+  .week-day-header {
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+  }
+
+  .week-day-name {
+    font-size: 11px;
+  }
+
+  .week-day-num {
+    font-size: 18px;
+  }
+
+  .week-rest-label {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .week-day-lunar {
+    font-size: 10px;
+  }
+
+  .week-day-content {
+    gap: 4px;
+  }
+
+  .week-holiday-tag {
+    font-size: 10px;
+    padding: 2px 5px;
+  }
+
+  .week-schedule-item {
+    padding: 3px 6px;
+    font-size: 11px;
+    gap: 3px;
+  }
+
+  .week-schedule-time {
+    display: none;
+  }
+
+  .week-more-btn {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .calendar-fullscreen .week-day-cell {
+    min-height: 110px;
+  }
+
+  .calendar-fullscreen .week-day-num {
+    font-size: 24px;
+  }
+
+  .calendar-fullscreen .week-holiday-tag {
+    font-size: 12px;
+  }
+
+  .calendar-fullscreen .week-schedule-item {
+    font-size: 13px;
+    padding: 5px 8px;
+  }
+
+  .calendar-fullscreen .week-schedule-time {
+    display: inline;
+  }
+}
+
+/* 日历单元格竖屏优化 - 固定高度防止撑开 */
+.calendar-cell-compact {
+  max-height: 85px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 日历内容区域（用于限制高度和滚动） */
+.calendar-cell-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 48px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 当内容超出时显示渐变遮罩 */
+.calendar-cell-content.has-more::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 16px;
+  background: linear-gradient(to bottom, transparent, var(--calendar-cell-bg, #fff));
+  pointer-events: none;
+}
+
+[data-theme='dark'] .calendar-cell-content.has-more::after {
+  background: linear-gradient(to bottom, transparent, var(--calendar-cell-bg, #1f1f1f));
+}
+
+/* "更多"按钮现代化样式 */
+.calendar-more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 8px;
+  margin-top: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent-primary, #1677ff);
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.1) 0%, rgba(var(--accent-rgb, 22, 119, 255), 0.05) 100%);
+  border: 1px solid rgba(var(--accent-rgb, 22, 119, 255), 0.2);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.calendar-more-btn:hover {
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.18) 0%, rgba(var(--accent-rgb, 22, 119, 255), 0.1) 100%);
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb, 22, 119, 255), 0.2);
+}
+
+.calendar-more-btn:active {
+  transform: scale(0.98);
+}
+
+[data-theme='dark'] .calendar-more-btn {
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.2) 0%, rgba(var(--accent-rgb, 22, 119, 255), 0.1) 100%);
+  border-color: rgba(var(--accent-rgb, 22, 119, 255), 0.3);
+}
+
+[data-theme='dark'] .calendar-more-btn:hover {
+  background: linear-gradient(135deg, rgba(var(--accent-rgb, 22, 119, 255), 0.3) 0%, rgba(var(--accent-rgb, 22, 119, 255), 0.15) 100%);
+}
+
+/* 竖屏日历标签紧凑样式 */
+.calendar-tag-compact {
+  font-size: 9px !important;
+  line-height: 16px !important;
+  height: 16px !important;
+  padding: 0 5px !important;
+  max-width: 60px !important;
+}
+
+/* 竖屏日程标签紧凑样式 */
+.schedule-tag-compact {
+  font-size: 9px !important;
+  line-height: 16px !important;
+  height: 16px !important;
+  padding: 0 5px 0 6px !important;
+  max-width: 55px !important;
+  border-left-width: 2px !important;
+}
+
+/* 竖屏响应式优化 */
+@media (max-width: 768px) {
+  /* 日历单元格竖屏固定高度 */
+  .calendar-cell-modern {
+    min-height: 70px !important;
+    max-height: 80px !important;
+    padding: 6px 4px !important;
+    border-radius: 8px !important;
+    overflow: hidden;
+  }
+
+  /* 日期数字缩小 */
+  .calendar-cell-modern .calendar-date-num {
+    font-size: 13px !important;
+  }
+
+  /* 今日日期 */
+  .calendar-cell-modern .calendar-date-num.is-today {
+    font-size: 14px !important;
+  }
+
+  /* 休/班标签缩小 */
+  .calendar-cell-modern .calendar-rest-label {
+    font-size: 8px !important;
+    padding: 1px 4px !important;
+    border-radius: 4px !important;
+  }
+
+  /* 日程数徽章缩小 */
+  .calendar-cell-modern .ant-badge-count {
+    min-width: 14px !important;
+    height: 14px !important;
+    line-height: 14px !important;
+    font-size: 10px !important;
+  }
+
+  /* 农历文字缩小 */
+  .calendar-cell-modern .calendar-lunar-text {
+    font-size: 9px !important;
+    line-height: 14px !important;
+  }
+
+  /* 标签容器 */
+  .calendar-cell-modern .calendar-tags-row {
+    gap: 2px !important;
+    max-height: 20px !important;
+    overflow: hidden;
+  }
+
+  /* 所有标签紧凑 */
+  .calendar-cell-modern .calendar-tag-item {
+    font-size: 9px !important;
+    line-height: 16px !important;
+    height: 16px !important;
+    padding: 0 5px !important;
+    border-radius: 4px !important;
+    max-width: 50px;
+  }
+
+  /* 日程管理页面头部 */
+  .schedule-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: flex-start !important;
+    padding: 16px !important;
+  }
+}
+
+/* 超窄屏幕（手机竖屏） */
+@media (max-width: 480px) {
+  .calendar-cell-modern {
+    min-height: 60px !important;
+    max-height: 70px !important;
+    padding: 4px 3px !important;
+    border-radius: 6px !important;
+    gap: 2px !important;
+  }
+
+  /* 日期行更紧凑 */
+  .calendar-cell-modern .calendar-date-row {
+    min-height: 18px !important;
+    margin-bottom: 1px !important;
+  }
+
+  .calendar-cell-modern .calendar-date-num {
+    font-size: 12px !important;
+    line-height: 18px !important;
+  }
+
+  .calendar-cell-modern .calendar-date-num.is-today {
+    font-size: 13px !important;
+  }
+
+  /* 休/班标签更小 */
+  .calendar-cell-modern .calendar-rest-label {
+    font-size: 7px !important;
+    padding: 0 3px !important;
+    line-height: 14px !important;
+  }
+
+  /* 徽章更小 */
+  .calendar-cell-modern .ant-badge-count {
+    min-width: 12px !important;
+    height: 12px !important;
+    line-height: 12px !important;
+    font-size: 9px !important;
+    padding: 0 2px !important;
+  }
+
+  /* 农历隐藏或极简 */
+  .calendar-cell-modern .calendar-lunar-text {
+    font-size: 8px !important;
+    line-height: 12px !important;
+  }
+
+  /* 标签行限制 */
+  .calendar-cell-modern .calendar-tags-row {
+    max-height: 18px !important;
+  }
+
+  .calendar-cell-modern .calendar-tag-item {
+    font-size: 8px !important;
+    line-height: 14px !important;
+    height: 14px !important;
+    padding: 0 4px !important;
+    max-width: 40px;
+  }
+
+  /* "更多"按钮紧凑 */
+  .calendar-more-btn {
+    font-size: 8px !important;
+    padding: 1px 5px !important;
+    border-radius: 6px !important;
+  }
+
+  /* 日程标签更紧凑 */
+  .schedule-tag-compact {
+    font-size: 8px !important;
+    line-height: 14px !important;
+    height: 14px !important;
+    max-width: 45px !important;
+  }
 }
 
 /* ===== 日视图样式 ===== */
@@ -2312,6 +3132,21 @@ body {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
 }
 
+/* 穿衣建议条目 */
+.weather-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #f7f8fa;
+  transition: background 0.2s ease;
+}
+
+[data-theme='dark'] .weather-suggestion-item {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .weather-forecast-date {
   font-size: 12px;
   opacity: 0.6;
@@ -2714,6 +3549,13 @@ body {
   }
 
   .news-header .ant-input-search {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* 日记搜索栏移动端全宽 */
+  .diary-search-bar .ant-input-affix-wrapper,
+  .diary-search-bar input {
     width: 100% !important;
     max-width: 100% !important;
   }

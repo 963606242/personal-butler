@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, memo } from 'react';
 import { Modal, Form, Input, Select, DatePicker, InputNumber, Space, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { COUNTDOWN_TYPES, REMINDER_DAYS_OPTIONS, REPEAT_UNIT_OPTIONS } from '../../stores/countdownStore';
 
-export default function CountdownFormModal({ open, editing, onCancel, onOk, form }) {
+function CountdownFormModal({ open, editing, onCancel, onOk, form }) {
   useEffect(() => {
     if (!open) return;
     if (editing) {
@@ -112,3 +112,5 @@ export default function CountdownFormModal({ open, editing, onCancel, onOk, form
     </Modal>
   );
 }
+
+export default memo(CountdownFormModal);

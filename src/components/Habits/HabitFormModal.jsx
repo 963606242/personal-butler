@@ -2,7 +2,7 @@
  * 习惯新建/编辑表单弹窗
  * 支持时段、提醒时间、频率、示例预设
  */
-import React from 'react';
+import React, { memo } from 'react';
 import { Modal, Form, Input, Select, TimePicker, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { PERIOD_OPTIONS, FREQUENCY_OPTIONS, WEEKDAY_OPTIONS } from '../../constants/habits';
@@ -99,4 +99,4 @@ function HabitFormModal({ open, editing, onCancel, onOk, form }) {
   );
 }
 
-export default HabitFormModal;
+export default memo(HabitFormModal);

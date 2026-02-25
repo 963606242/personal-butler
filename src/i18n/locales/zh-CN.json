@@ -47,6 +47,26 @@
     "deleteConfirm": "确定删除这条日记吗？",
     "noEntries": "这一天还没有记录，点击「新建日记」开始记录吧"
   },
+  "diaryForm": {
+    "selectImageFailed": "选择图片失败",
+    "videoSelected": "视频已选择",
+    "selectVideoFailed": "选择视频失败",
+    "recordingStarted": "开始录音",
+    "recordingFailed": "录音失败",
+    "recordingComplete": "录音完成",
+    "recordingCanceled": "已取消录音",
+    "pleaseAddImage": "请先添加图片",
+    "imageAnalysisSaved": "图片分析已保存，可用于搜索",
+    "imageAnalysisFailed": "图片分析失败",
+    "pleaseRecordAudio": "请先录制或选择录音",
+    "transcribeElectronOnly": "录音转写当前仅支持 Electron 环境，且需配置 OpenAI API Key",
+    "pleaseConfigureApiKey": "请先在设置中配置 OpenAI API Key",
+    "transcribeSaved": "转写已保存，可用于搜索",
+    "transcribeFailed": "转写失败",
+    "updateSuccess": "更新成功",
+    "createSuccess": "创建成功",
+    "saveFailed": "保存失败"
+  },
   "fun": {
     "pageTitle": "趣味工具",
     "pageDesc": "亲戚计算器、抽签解签、掷骰子、抛硬币、随机一句，轻量娱乐",
@@ -187,7 +207,12 @@
     "batchCheckInConfirm": "确认为以下习惯打卡今日？",
     "batchCheckInOk": "确认打卡",
     "batchCheckInDone": "已为 {{n}} 个习惯打卡",
-    "batchCheckInEmpty": "当前时段没有待打卡习惯"
+    "batchCheckInEmpty": "当前时段没有待打卡习惯",
+    "countdown": "倒数日",
+    "countdownToday": "就是今天",
+    "countdownDays": "还有 {{n}} 天",
+    "writeDiary": "写日记",
+    "chatWithAi": "和 AI 聊聊"
   },
   "settings": {
     "title": "设置",
@@ -296,18 +321,56 @@
     },
     "equipment": {
       "description": "还没有装备记录，添加你的第一件装备吧",
-      "action": "添加装备"
+      "action": "添加装备",
+      "messages": {
+        "updated": "装备已更新",
+        "created": "装备已创建",
+        "saveFailed": "保存失败",
+        "deleted": "已删除装备",
+        "deleteFailed": "删除失败",
+        "maintained": "{{name}} 已标记维护完成",
+        "maintainFailed": "标记失败"
+      }
     },
     "clothing": {
       "description": "还没有服装数据，先添加几件常穿的～",
-      "action": "添加服装"
+      "action": "添加服装",
+      "messages": {
+        "loadFailed": "加载服装失败",
+        "updated": "已更新服装",
+        "created": "已添加服装",
+        "saveFailed": "保存失败",
+        "deleted": "已删除服装",
+        "deleteFailed": "删除失败"
+      }
     },
     "outfits": {
       "description": "还没有搭配记录，试试搭配一套吧～",
-      "action": "新建搭配"
+      "action": "新建搭配",
+      "messages": {
+        "loadFailed": "加载搭配失败",
+        "updated": "已更新搭配",
+        "created": "已创建搭配",
+        "saveFailed": "保存失败",
+        "deleted": "已删除搭配",
+        "deleteFailed": "删除失败",
+        "recommendFailed": "获取推荐失败"
+      }
     },
     "news": {
-      "description": "暂无新闻数据，稍后再来看看"
+      "description": "暂无新闻数据，稍后再来看看",
+      "messages": {
+        "searchFailed": "搜索失败，请稍后重试",
+        "loadFailed": "加载失败，请重试",
+        "refreshed": "已刷新",
+        "refreshFailed": "刷新失败",
+        "refreshFailedNetwork": "刷新失败，请检查网络或代理后重试",
+        "intlLoadFailed": "国外新闻加载失败，请检查网络或代理后重试",
+        "morningGenerated": "早报已生成",
+        "morningFailed": "生成早报失败",
+        "eveningGenerated": "晚报已生成",
+        "eveningFailed": "生成晚报失败"
+      }
     },
     "newsSearch": {
       "description": "输入关键词搜索一下"
@@ -327,6 +390,45 @@
     },
     "generic": {
       "description": "这里还没有内容，去别处逛逛吧"
+    }
+  },
+  "profile": {
+    "messages": {
+      "loadFailed": "加载用户信息失败",
+      "updateSuccess": "个人信息更新成功",
+      "updateFailed": "更新失败",
+      "formInvalid": "请检查表单填写是否正确"
+    }
+  },
+  "schedule": {
+    "messages": {
+      "saveFailed": "保存失败",
+      "updated": "日程更新成功",
+      "created": "日程创建成功",
+      "deleted": "日程删除成功",
+      "deleteFailed": "删除失败"
+    }
+  },
+  "aiChat": {
+    "messages": {
+      "carryDataFailed": "携带数据加载失败，已仅发送问题",
+      "saveFailed": "保存失败，请重试",
+      "sendFailed": "发送失败，请重试",
+      "cleared": "已清空聊天记录",
+      "clearFailed": "清空失败",
+      "retryFailed": "重试失败，请稍后再试",
+      "generateFailed": "生成失败，请重试",
+      "savedAsSchedule": "已保存为日程",
+      "savedAsHabit": "已保存为习惯"
+    }
+  },
+  "weather": {
+    "messages": {
+      "searchFailed": "搜索城市失败",
+      "citySwitched": "已切换到 {{city}}",
+      "switchFailed": "切换城市失败",
+      "refreshed": "天气信息已更新",
+      "refreshFailed": "刷新失败"
     }
   },
   "habits": {

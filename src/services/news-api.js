@@ -7,7 +7,9 @@
  * 免费版限制：100次/天，仅限开发使用
  */
 
-const logger = console;
+import { getLogger } from './logger-client';
+
+const logger = getLogger();
 
 import * as cnNewsAPI from './news-api-cn';
 import { fetchJson } from './fetch-json';
@@ -29,7 +31,7 @@ function newsDebugLog(msg, detail) {
       detailStr = ' [无法序列化]';
     }
   }
-  console.log(`[NewsAPI 调试] ${msg}${detailStr}`);
+  logger.debug('NewsAPI', `调试: ${msg}${detailStr}`);
 }
 
 /**

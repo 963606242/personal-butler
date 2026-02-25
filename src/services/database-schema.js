@@ -81,6 +81,8 @@ export const CREATE_TABLES_SQL = [
     status TEXT,
     image_path TEXT,
     notes TEXT,
+    maintenance_interval INTEGER,
+    last_maintained INTEGER,
     created_at INTEGER,
     updated_at INTEGER
   )`,

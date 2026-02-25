@@ -3,6 +3,9 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 const { app } = require('electron');
+const Logger = require('./logger');
+
+const logger = new Logger();
 
 class DatabaseService {
   constructor() {
@@ -25,61 +28,62 @@ class DatabaseService {
 
   async _doInit() {
     try {
-      console.log('[DB] 开始初始化数据库服务...');
-      console.log('[DB] App 状态 - isReady:', app?.isReady?.());
+      logger.log('Database', '开始初始化数据库服务...');
+      logger.log('Database', 'App 状态 - isReady:', app?.isReady?.());
       
       // 检查 app 是否就绪
       if (!app || !app.isReady || !app.isReady()) {
-        console.warn('[DB] App 未就绪，等待 app ready...');
+        logger.warn('Database', 'App 未就绪，等待 app ready...');
         if (app && app.whenReady) {
           await app.whenReady();
-          console.log('[DB] App ready，继续初始化数据库...');
+          logger.log('Database', 'App ready，继续初始化数据库...');
         } else {
-          console.error('[DB] ❌ App 对象不可用');
+          logger.error('Database', 'App 对象不可用');
           throw new Error('App 对象不可用');
         }
       }
 
       // 获取用户数据目录
       const userDataPath = app.getPath('userData');
-      console.log('[DB] 用户数据目录:', userDataPath);
+      logger.log('Database', '用户数据目录:', userDataPath);
       
       const dbDir = path.join(userDataPath, 'personal-butler');
-      console.log('[DB] 数据库目录:', dbDir);
+      logger.log('Database', '数据库目录:', dbDir);
 
       // 确保目录存在
       if (!fs.existsSync(dbDir)) {
-        console.log('[DB] 创建数据库目录...');
+        logger.log('Database', '创建数据库目录...');
         fs.mkdirSync(dbDir, { recursive: true });
       }
 
       this.dbPath = path.join(dbDir, 'personal-butler.db');
-      console.log('[DB] 数据库文件路径:', this.dbPath);
+      logger.log('Database', '数据库文件路径:', this.dbPath);
 
       // 创建数据库连接
-      console.log('[DB] 创建数据库连接...');
+      logger.log('Database', '创建数据库连接...');
       this.db = new Database(this.dbPath);
-      console.log('[DB] 数据库连接创建成功');
+      logger.log('Database', '数据库连接创建成功');
 
       // 启用外键约束
       this.db.pragma('foreign_keys = ON');
-      console.log('[DB] 外键约束已启用');
+      logger.log('Database', '外键约束已启用');
 
       // 创建表
-      console.log('[DB] 开始创建表结构...');
+      logger.log('Database', '开始创建表结构...');
       this.createTables();
-      console.log('[DB] 表结构创建完成');
+      logger.log('Database', '表结构创建完成');
 
       this.migrateHabitsSchema();
       this.migrateUserProfilesSchema();
       this.migrateCountdownSchema();
       this.migrateDiarySchema();
+      this.migrateEquipmentSchema();
 
       this.initialized = true;
-      console.log('[DB] ✅ 数据库初始化成功:', this.dbPath);
+      logger.log('Database', '数据库初始化成功:', this.dbPath);
     } catch (error) {
-      console.error('[DB] ❌ 数据库初始化失败:', error);
-      console.error('[DB] 错误堆栈:', error.stack);
+      logger.error('Database', '数据库初始化失败:', error);
+      logger.error('Database', '错误堆栈:', error.stack);
       this.initialized = false;
       throw error;
     }
@@ -298,10 +302,10 @@ class DatabaseService {
   // 通用查询方法
   query(sql, params = []) {
     try {
-      console.log('[DB] 执行查询:', sql, '参数:', params);
+      logger.debug('Database', '执行查询:', sql, '参数:', params);
       
       if (!this.db) {
-        console.error('[DB] ❌ 数据库未初始化，尝试重新初始化...');
+        logger.error('Database', '数据库未初始化，尝试重新初始化...');
         this.init();
         if (!this.db) {
           throw new Error('数据库未初始化，无法执行查询');
@@ -309,7 +313,7 @@ class DatabaseService {
       }
 
       if (!this.initialized) {
-        console.warn('[DB] ⚠️ 数据库未完全初始化，等待初始化完成...');
+        logger.warn('Database', '数据库未完全初始化，等待初始化完成...');
         // 等待初始化完成
         let attempts = 0;
         while (!this.initialized && attempts < 10) {
@@ -327,13 +331,12 @@ class DatabaseService {
 
       const stmt = this.db.prepare(sql);
       const result = stmt.all(params);
-      console.log('[DB] ✅ 查询成功，返回', result.length, '条记录');
+      logger.debug('Database', '查询成功，返回', result.length, '条记录');
       return result;
     } catch (error) {
-      console.error('[DB] ❌ 查询错误:', error);
-      console.error('[DB] SQL:', sql);
-      console.error('[DB] 参数:', params);
-      console.error('[DB] 错误堆栈:', error.stack);
+      logger.error('Database', '查询错误:', error);
+      logger.error('Database', 'SQL:', sql);
+      logger.error('Database', '参数:', params);
       throw error;
     }
   }
@@ -341,10 +344,10 @@ class DatabaseService {
   // 通用执行方法
   execute(sql, params = []) {
     try {
-      console.log('[DB] 执行更新:', sql, '参数:', params);
+      logger.debug('Database', '执行更新:', sql, '参数:', params);
       
       if (!this.db) {
-        console.error('[DB] ❌ 数据库未初始化，尝试重新初始化...');
+        logger.error('Database', '数据库未初始化，尝试重新初始化...');
         this.init();
         if (!this.db) {
           throw new Error('数据库未初始化，无法执行更新');
@@ -352,7 +355,7 @@ class DatabaseService {
       }
 
       if (!this.initialized) {
-        console.warn('[DB] ⚠️ 数据库未完全初始化，等待初始化完成...');
+        logger.warn('Database', '数据库未完全初始化，等待初始化完成...');
         // 等待初始化完成
         let attempts = 0;
         while (!this.initialized && attempts < 10) {
@@ -369,13 +372,12 @@ class DatabaseService {
 
       const stmt = this.db.prepare(sql);
       const result = stmt.run(params);
-      console.log('[DB] ✅ 更新成功，影响行数:', result.changes);
+      logger.debug('Database', '更新成功，影响行数:', result.changes);
       return result;
     } catch (error) {
-      console.error('[DB] ❌ 执行错误:', error);
-      console.error('[DB] SQL:', sql);
-      console.error('[DB] 参数:', params);
-      console.error('[DB] 错误堆栈:', error.stack);
+      logger.error('Database', '执行错误:', error);
+      logger.error('Database', 'SQL:', sql);
+      logger.error('Database', '参数:', params);
       throw error;
     }
   }
@@ -387,14 +389,14 @@ class DatabaseService {
       const cols = info.map((c) => c.name);
       if (!cols.includes('period')) {
         this.db.exec('ALTER TABLE habits ADD COLUMN period TEXT');
-        console.log('[DB] habits 表已添加 period 列');
+        logger.log('Database:Migration', 'habits 表已添加 period 列');
       }
       if (!cols.includes('sort_order')) {
         this.db.exec('ALTER TABLE habits ADD COLUMN sort_order INTEGER DEFAULT 0');
-        console.log('[DB] habits 表已添加 sort_order 列');
+        logger.log('Database:Migration', 'habits 表已添加 sort_order 列');
       }
     } catch (e) {
-      console.warn('[DB] habits 迁移跳过或失败:', e.message);
+      logger.warn('Database:Migration', 'habits 迁移跳过或失败:', e.message);
     }
   }
 
@@ -405,14 +407,14 @@ class DatabaseService {
       const cols = info.map((c) => c.name);
       if (!cols.includes('city')) {
         this.db.exec('ALTER TABLE user_profiles ADD COLUMN city TEXT');
-        console.log('[DB] user_profiles 表已添加 city 列');
+        logger.log('Database:Migration', 'user_profiles 表已添加 city 列');
       }
       if (!cols.includes('mbti')) {
         this.db.exec('ALTER TABLE user_profiles ADD COLUMN mbti TEXT');
-        console.log('[DB] user_profiles 表已添加 mbti 列');
+        logger.log('Database:Migration', 'user_profiles 表已添加 mbti 列');
       }
     } catch (e) {
-      console.warn('[DB] user_profiles 迁移跳过或失败:', e.message);
+      logger.warn('Database:Migration', 'user_profiles 迁移跳过或失败:', e.message);
     }
   }
 
@@ -423,14 +425,14 @@ class DatabaseService {
       const cols = info.map((c) => c.name);
       if (!cols.includes('repeat_interval')) {
         this.db.exec('ALTER TABLE countdown_events ADD COLUMN repeat_interval INTEGER NOT NULL DEFAULT 0');
-        console.log('[DB] countdown_events 表已添加 repeat_interval 列');
+        logger.log('Database:Migration', 'countdown_events 表已添加 repeat_interval 列');
       }
       if (!cols.includes('repeat_unit')) {
         this.db.exec('ALTER TABLE countdown_events ADD COLUMN repeat_unit TEXT');
-        console.log('[DB] countdown_events 表已添加 repeat_unit 列');
+        logger.log('Database:Migration', 'countdown_events 表已添加 repeat_unit 列');
       }
     } catch (e) {
-      console.warn('[DB] countdown_events 迁移跳过或失败:', e.message);
+      logger.warn('Database:Migration', 'countdown_events 迁移跳过或失败:', e.message);
     }
   }
 
@@ -441,14 +443,32 @@ class DatabaseService {
       const cols = info.map((c) => c.name);
       if (!cols.includes('image_analysis')) {
         this.db.exec('ALTER TABLE diary_entries ADD COLUMN image_analysis TEXT');
-        console.log('[DB] diary_entries 表已添加 image_analysis 列');
+        logger.log('Database:Migration', 'diary_entries 表已添加 image_analysis 列');
       }
       if (!cols.includes('audio_transcript')) {
         this.db.exec('ALTER TABLE diary_entries ADD COLUMN audio_transcript TEXT');
-        console.log('[DB] diary_entries 表已添加 audio_transcript 列');
+        logger.log('Database:Migration', 'diary_entries 表已添加 audio_transcript 列');
       }
     } catch (e) {
-      console.warn('[DB] diary_entries 迁移跳过或失败:', e.message);
+      logger.warn('Database:Migration', 'diary_entries 迁移跳过或失败:', e.message);
+    }
+  }
+
+  migrateEquipmentSchema() {
+    if (!this.db) return;
+    try {
+      const info = this.db.prepare('PRAGMA table_info(equipment)').all();
+      const cols = info.map((c) => c.name);
+      if (!cols.includes('maintenance_interval')) {
+        this.db.exec('ALTER TABLE equipment ADD COLUMN maintenance_interval INTEGER');
+        logger.log('Database:Migration', 'equipment 表已添加 maintenance_interval 列');
+      }
+      if (!cols.includes('last_maintained')) {
+        this.db.exec('ALTER TABLE equipment ADD COLUMN last_maintained INTEGER');
+        logger.log('Database:Migration', 'equipment 表已添加 last_maintained 列');
+      }
+    } catch (e) {
+      logger.warn('Database:Migration', 'equipment 迁移跳过或失败:', e.message);
     }
   }
 
@@ -479,7 +499,7 @@ class DatabaseService {
         const rows = this.db.prepare(`SELECT * FROM ${table}`).all();
         out.data[table] = rows;
       } catch (e) {
-        console.warn('[DB] exportForSync 跳过表', table, e.message);
+        logger.warn('Database:Sync', 'exportForSync 跳过表', table, e.message);
         out.data[table] = [];
       }
     }
@@ -524,7 +544,7 @@ class DatabaseService {
           const vals = cols.map((c) => row[c] ?? null);
           stmt.run(vals);
         }
-        console.log('[DB] importFromSync 导入表', table, rows.length, '条');
+        logger.log('Database:Sync', 'importFromSync 导入表', table, rows.length, '条');
       }
     } finally {
       this.db.pragma('foreign_keys = ON');

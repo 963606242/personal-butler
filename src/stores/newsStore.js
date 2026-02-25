@@ -3,16 +3,13 @@
  * 新闻数据管理、缓存、早报/晚报生成
  */
 import { create } from 'zustand';
-import { getDatabase } from '../services/database';
 import { getLogger } from '../services/logger-client';
 import useUserStore from './userStore';
 import * as newsAPI from '../services/news-api';
+import { getCache, setCache } from '../services/cache-service';
 import dayjs from 'dayjs';
 
 const logger = getLogger();
-
-// 缓存时间：1小时（用于非时间段缓存）
-const CACHE_DURATION = 60 * 60 * 1000;
 
 /**
  * 获取当前时间段标识（用于缓存）
@@ -72,43 +69,6 @@ const useNewsStore = create((set, get) => ({
   searchResults: [],
   searchLoading: false,
 
-  /** 从缓存获取新闻 */
-  async getNewsFromCache(cacheKey) {
-    try {
-      const db = await getDatabase();
-      const cachedList = await db.query(
-        'SELECT value, expires_at FROM cache WHERE key = ?',
-        [`news_${cacheKey}`]
-      );
-      const cached = cachedList.length > 0 ? cachedList[0] : null;
-
-      if (cached && cached.expires_at > Date.now()) {
-        return JSON.parse(cached.value);
-      }
-
-      return null;
-    } catch (e) {
-      logger.warn('NewsStore', '获取缓存失败', e);
-      return null;
-    }
-  },
-
-  /** 保存新闻到缓存（支持时间段缓存） */
-  async saveNewsToCache(cacheKey, newsData, useTimePeriod = true) {
-    try {
-      const db = await getDatabase();
-      // 如果使用时间段缓存，过期时间为下一个时间段开始；否则使用固定时长
-      const expiresAt = useTimePeriod ? getTimePeriodExpiry() : (Date.now() + CACHE_DURATION);
-      await db.execute(
-        `INSERT OR REPLACE INTO cache (key, value, expires_at, created_at)
-         VALUES (?, ?, ?, ?)`,
-        [`news_${cacheKey}`, JSON.stringify(newsData), expiresAt, Date.now()]
-      );
-    } catch (e) {
-      logger.warn('NewsStore', '保存缓存失败', e);
-    }
-  },
-
   /** 获取头条新闻。options.skipCache === true 时跳过缓存，强制请求 API。 */
   async fetchHeadlines(options = {}) {
     const { skipCache = false, ...apiOpts } = options;
@@ -119,9 +79,9 @@ const useNewsStore = create((set, get) => ({
       const cacheKey = `headlines_${timePeriod}_${JSON.stringify(apiOpts)}`;
 
       if (!skipCache) {
-        const cached = await get().getNewsFromCache(cacheKey);
+        const cached = await getCache(`news_${cacheKey}`);
         if (cached) {
-          console.log('[NewsAPI 调试] 头条 来自缓存，未请求 API', { 
+          logger.debug('NewsStore', '头条来自缓存，未请求API', { 
             cacheKey, 
             时间段: timePeriod,
             条数: cached?.length ?? 0 
@@ -130,12 +90,12 @@ const useNewsStore = create((set, get) => ({
           return cached;
         }
       } else {
-        console.log('[NewsAPI 调试] 头条 跳过缓存，强制请求 API', { apiOpts, 时间段: timePeriod });
+        logger.debug('NewsStore', '头条跳过缓存，强制请求API', { apiOpts, 时间段: timePeriod });
       }
 
       const news = await newsAPI.getTopHeadlines(apiOpts);
       // 使用时间段缓存（过期时间为下一个时间段开始）
-      await get().saveNewsToCache(cacheKey, news, true);
+      await setCache(`news_${cacheKey}`, news, getTimePeriodExpiry());
       set({ headlines: news, loading: false });
       return news;
     } catch (e) {
@@ -154,7 +114,7 @@ const useNewsStore = create((set, get) => ({
       const cacheKey = `category_${timePeriod}_${category}_${country}_${pageSize}`;
 
       if (!skipCache) {
-        const cached = await get().getNewsFromCache(cacheKey);
+        const cached = await getCache(`news_${cacheKey}`);
         if (cached) {
           set((state) => ({
             newsByCategory: { ...state.newsByCategory, [category]: cached },
@@ -165,7 +125,7 @@ const useNewsStore = create((set, get) => ({
       }
 
       const news = await newsAPI.getNewsByCategory(category, country, pageSize);
-      await get().saveNewsToCache(cacheKey, news, true);
+      await setCache(`news_${cacheKey}`, news, getTimePeriodExpiry());
       set((state) => ({
         newsByCategory: { ...state.newsByCategory, [category]: news },
         loading: false,
@@ -189,7 +149,7 @@ const useNewsStore = create((set, get) => ({
       const cacheKey = `headlines_${source}_${timePeriod}_${category}_${pageSize}`;
 
       if (!skipCache) {
-        const cached = await get().getNewsFromCache(cacheKey);
+        const cached = await getCache(`news_${cacheKey}`);
         if (cached && Array.isArray(cached)) {
           set({ [key]: cached, [loadingKey]: null });
           return cached;
@@ -198,7 +158,7 @@ const useNewsStore = create((set, get) => ({
 
       const fetchFn = source === 'cn' ? newsAPI.getTopHeadlinesCn : newsAPI.getTopHeadlinesIntl;
       const news = await fetchFn({ category, pageSize });
-      await get().saveNewsToCache(cacheKey, news, true);
+      await setCache(`news_${cacheKey}`, news, getTimePeriodExpiry());
       set({ [key]: news, [loadingKey]: null });
       return news;
     } catch (e) {
@@ -219,7 +179,7 @@ const useNewsStore = create((set, get) => ({
       const cacheKey = `category_${source}_${timePeriod}_${category}_${pageSize}`;
 
       if (!skipCache) {
-        const cached = await get().getNewsFromCache(cacheKey);
+        const cached = await getCache(`news_${cacheKey}`);
         if (cached && Array.isArray(cached)) {
           set((s) => ({
             [catKey]: { ...s[catKey], [category]: cached },
@@ -231,7 +191,7 @@ const useNewsStore = create((set, get) => ({
 
       const fetchFn = source === 'cn' ? newsAPI.getNewsByCategoryCn : newsAPI.getNewsByCategoryIntl;
       const news = await fetchFn(category, pageSize);
-      await get().saveNewsToCache(cacheKey, news, true);
+      await setCache(`news_${cacheKey}`, news, getTimePeriodExpiry());
       set((s) => ({
         [catKey]: { ...s[catKey], [category]: news },
         categoryLoading: null,
@@ -345,7 +305,7 @@ const useNewsStore = create((set, get) => ({
       const cacheKey = `morning_report_${today}`;
       
       // 先尝试从缓存获取
-      const cached = await get().getNewsFromCache(cacheKey);
+      const cached = await getCache(`news_${cacheKey}`);
       if (cached) {
         set({ dailyReport: cached });
         return cached;
@@ -355,7 +315,7 @@ const useNewsStore = create((set, get) => ({
       const report = await get().generateMorningReport();
       
       // 保存到缓存（即使数据为空也保存，避免重复请求）
-      await get().saveNewsToCache(cacheKey, report);
+      await setCache(`news_${cacheKey}`, report, getTimePeriodExpiry());
 
       return report;
     } catch (e) {
@@ -380,7 +340,7 @@ const useNewsStore = create((set, get) => ({
       const cacheKey = `evening_report_${today}`;
       
       // 先尝试从缓存获取
-      const cached = await get().getNewsFromCache(cacheKey);
+      const cached = await getCache(`news_${cacheKey}`);
       if (cached) {
         set({ dailyReport: cached });
         return cached;
@@ -390,7 +350,7 @@ const useNewsStore = create((set, get) => ({
       const report = await get().generateEveningReport();
       
       // 保存到缓存（即使数据为空也保存，避免重复请求）
-      await get().saveNewsToCache(cacheKey, report);
+      await setCache(`news_${cacheKey}`, report, getTimePeriodExpiry());
 
       return report;
     } catch (e) {

@@ -32,7 +32,9 @@ import {
   RobotOutlined,
   MoonOutlined,
   ExperimentOutlined,
+  ToolOutlined,
   SmileOutlined,
+  FieldTimeOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useUserStore from '../stores/userStore';
@@ -40,6 +42,8 @@ import useHabitStore from '../stores/habitStore';
 import useScheduleStore from '../stores/scheduleStore';
 import useWeatherStore from '../stores/weatherStore';
 import useNewsStore from '../stores/newsStore';
+import useEquipmentStore from '../stores/equipmentStore';
+import useCountdownStore, { getNextOccurrence } from '../stores/countdownStore';
 import { getCurrentPeriodInfo } from '../utils/period-helper';
 import {
   fetchTodaySuggestion,
@@ -56,6 +60,9 @@ import { getZodiacFromBirthday } from '../utils/zodiac';
 import { getAssistantName } from '../utils/assistant-name';
 import { getTodayCheckin, performCheckin } from '../utils/fun-checkin';
 import { theme } from 'antd';
+import { getLogger } from '../services/logger-client';
+
+const logger = getLogger();
 
 const NEWS_CATEGORIES = [
   { value: 'general', icon: '📰' },
@@ -76,6 +83,8 @@ function Dashboard() {
   const { schedules, loadSchedules, getSchedulesByDate } = useScheduleStore();
   const { currentWeather, currentCity, initialize: initWeather } = useWeatherStore();
   const { dailyReport, getTodayMorningReport, getTodayEveningReport } = useNewsStore();
+  const { equipment, loadEquipment, getMaintenanceDueItems, markMaintained } = useEquipmentStore();
+  const { events: countdownEvents, loadEvents: loadCountdownEvents, daysUntil } = useCountdownStore();
   const { isDark, accent } = useTheme();
   const { openIfNewUser } = useOnboarding();
   const { t } = useI18n();
@@ -140,18 +149,20 @@ function Dashboard() {
         await Promise.all([
           loadHabits(),
           loadSchedules(dayjs().startOf('day').toDate(), dayjs().endOf('day').toDate()),
+          loadEquipment().catch((e) => logger.warn('Dashboard', '加载装备失败:', e.message)),
+          loadCountdownEvents().catch((e) => logger.warn('Dashboard', '加载倒数日失败:', e.message)),
           initWeather().catch((e) => {
             // 天气初始化失败不影响其他功能，只记录错误
-            console.warn('天气初始化失败:', e.message);
+            logger.warn('Dashboard', '天气初始化失败:', e.message);
           }),
         ]);
 
         // 根据时间加载早报或晚报
         const hour = dayjs().hour();
         if (hour >= 6 && hour < 12) {
-          getTodayMorningReport().catch((e) => console.warn('加载早报失败:', e.message));
+          getTodayMorningReport().catch((e) => logger.warn('Dashboard', '加载早报失败:', e.message));
         } else if (hour >= 18) {
-          getTodayEveningReport().catch((e) => console.warn('加载晚报失败:', e.message));
+          getTodayEveningReport().catch((e) => logger.warn('Dashboard', '加载晚报失败:', e.message));
         }
         // 恢复今日建议缓存（切换页面后保留）
         const cached = await getCachedSuggestion();
@@ -163,7 +174,7 @@ function Dashboard() {
           handleFetchSuggestion();
         }
       } catch (e) {
-        console.error('加载数据失败', e);
+        logger.error('Dashboard', '加载数据失败', e);
       } finally {
         setLoading(false);
       }
@@ -462,6 +473,134 @@ function Dashboard() {
               )}
             />
           </Modal>
+
+          {/* 天气信息 */}
+          {(() => {
+            const maintenanceDue = getMaintenanceDueItems();
+            if (maintenanceDue.length === 0) return null;
+            return (
+              <Card
+                className="dashboard-feature-card"
+                title={
+                  <Space>
+                    <ToolOutlined className="dashboard-card-icon" style={{ color: '#faad14', fontSize: 18 }} />
+                    <span>装备维护提醒</span>
+                    <Tag color="warning">{maintenanceDue.length}</Tag>
+                  </Space>
+                }
+                extra={
+                  <Button type="link" onClick={() => navigate('/equipment')} icon={<RightOutlined />}>
+                    查看全部
+                  </Button>
+                }
+                style={{ marginBottom: 16 }}
+              >
+                <List
+                  size="small"
+                  dataSource={maintenanceDue.slice(0, 5)}
+                  renderItem={(item) => (
+                    <List.Item
+                      actions={[
+                        <Button
+                          key="done"
+                          type="link"
+                          size="small"
+                          onClick={async () => {
+                            try {
+                              await markMaintained(item.id);
+                              message.success(`${item.name} 已维护`);
+                            } catch (e) {
+                              message.error('操作失败');
+                            }
+                          }}
+                        >
+                          已维护
+                        </Button>,
+                      ]}
+                    >
+                      <List.Item.Meta
+                        title={item.name}
+                        description={`周期 ${item.maintenance_interval} 天 · 上次：${item.last_maintained ? dayjs(item.last_maintained).format('YYYY-MM-DD') : '从未维护'}`}
+                      />
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            );
+          })()}
+
+          {/* 倒数日卡片 */}
+          {(() => {
+            // 按距离目标日排序，显示最近的3个
+            const upcomingEvents = [...(countdownEvents || [])]
+              .map((e) => ({
+                ...e,
+                days: daysUntil(e),
+                nextDate: getNextOccurrence(e),
+              }))
+              .filter((e) => e.days >= 0) // 只显示未来的
+              .sort((a, b) => a.days - b.days)
+              .slice(0, 3);
+            if (upcomingEvents.length === 0) return null;
+            return (
+              <Card
+                className="dashboard-feature-card"
+                title={
+                  <Space>
+                    <FieldTimeOutlined className="dashboard-card-icon" style={{ color: '#eb2f96', fontSize: 18 }} />
+                    <span>{t('dashboard.countdown', '倒数日')}</span>
+                  </Space>
+                }
+                extra={
+                  <Button type="link" onClick={() => navigate('/countdown')} icon={<RightOutlined />}>
+                    {t('dashboard.viewAll')}
+                  </Button>
+                }
+                style={{ marginBottom: 16 }}
+              >
+                <List
+                  size="small"
+                  dataSource={upcomingEvents}
+                  renderItem={(item) => (
+                    <List.Item
+                      className="dashboard-list-item"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => navigate('/countdown')}
+                    >
+                      <List.Item.Meta
+                        avatar={
+                          <Avatar 
+                            style={{ 
+                              backgroundColor: item.days === 0 ? '#f5222d' : item.days <= 7 ? '#fa8c16' : '#1890ff',
+                              boxShadow: `0 2px 8px ${item.days === 0 ? '#f5222d' : item.days <= 7 ? '#fa8c16' : '#1890ff'}40`,
+                            }}
+                          >
+                            {item.days === 0 ? '!' : item.days}
+                          </Avatar>
+                        }
+                        title={<Text strong>{item.title}</Text>}
+                        description={
+                          <Space size="small">
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {item.nextDate.format('YYYY-MM-DD')}
+                            </Text>
+                            <Tag 
+                              color={item.days === 0 ? 'red' : item.days <= 7 ? 'orange' : 'blue'} 
+                              style={{ borderRadius: 6, fontSize: 11 }}
+                            >
+                              {item.days === 0 
+                                ? t('dashboard.countdownToday', '就是今天')
+                                : t('dashboard.countdownDays', '还有{{n}}天', { n: item.days })}
+                            </Tag>
+                          </Space>
+                        }
+                      />
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            );
+          })()}
 
           {/* 天气信息 */}
           {currentWeather && (

@@ -24,12 +24,14 @@ import {
   SearchOutlined,
   FilterOutlined,
   RobotOutlined,
+  ToolOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
 import useEquipmentStore, { EQUIPMENT_CATEGORIES, EQUIPMENT_STATUS } from '../stores/equipmentStore';
 import useUserStore from '../stores/userStore';
 import { getLogger } from '../services/logger-client';
+import { useI18n } from '../context/I18nContext';
 import EquipmentFormModal from '../components/Equipment/EquipmentFormModal';
 
 const { Title, Text } = Typography;
@@ -38,6 +40,7 @@ const logger = getLogger();
 
 function Equipment() {
   const [form] = Form.useForm();
+  const { t } = useI18n();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEquipment, setEditingEquipment] = useState(null);
   const [searchText, setSearchText] = useState('');
@@ -46,7 +49,7 @@ function Equipment() {
 
   const { currentUser, isInitialized } = useUserStore();
   const navigate = useNavigate();
-  const { equipment, loading, loadEquipment, createEquipment, updateEquipment, deleteEquipment } =
+  const { equipment, loading, loadEquipment, createEquipment, updateEquipment, deleteEquipment, markMaintained } =
     useEquipmentStore();
 
   useEffect(() => {
@@ -73,6 +76,7 @@ function Equipment() {
       status: item.status || 'normal',
       image_path: item.image_path || '',
       notes: item.notes || '',
+      maintenance_interval: item.maintenance_interval || null,
     });
     setModalVisible(true);
   };
@@ -89,13 +93,15 @@ function Equipment() {
         status: values.status || 'normal',
         image_path: values.image_path || null,
         notes: values.notes || null,
+        maintenance_interval: values.maintenance_interval || null,
+        last_maintained: editingEquipment?.last_maintained ? dayjs(editingEquipment.last_maintained) : null,
       };
       if (editingEquipment) {
         await updateEquipment(editingEquipment.id, data);
-        message.success('装备已更新');
+        message.success(t('equipment.messages.updated', '装备已更新'));
       } else {
         await createEquipment(data);
-        message.success('装备已创建');
+        message.success(t('equipment.messages.created', '装备已创建'));
       }
       setModalVisible(false);
       setEditingEquipment(null);
@@ -103,18 +109,36 @@ function Equipment() {
     } catch (e) {
       if (e?.errorFields) return;
       logger.error('Equipment', '保存装备失败', e);
-      message.error('保存失败：' + (e?.message || '未知错误'));
+      message.error(t('equipment.messages.saveFailed', '保存失败') + '：' + (e?.message || ''));
     }
   };
 
   const handleDelete = async (item) => {
     try {
       await deleteEquipment(item.id);
-      message.success('已删除装备');
+      message.success(t('equipment.messages.deleted', '已删除装备'));
     } catch (e) {
       logger.error('Equipment', '删除装备失败', e);
-      message.error('删除失败');
+      message.error(t('equipment.messages.deleteFailed', '删除失败'));
     }
+  };
+
+  const handleMarkMaintained = async (item) => {
+    try {
+      await markMaintained(item.id);
+      message.success(t('equipment.messages.maintained', '{{name}} 已标记维护完成', { name: item.name }));
+    } catch (e) {
+      logger.error('Equipment', '标记维护失败', e);
+      message.error(t('equipment.messages.maintainFailed', '标记失败'));
+    }
+  };
+
+  const isMaintenanceDue = (item) => {
+    if (!item.maintenance_interval || item.maintenance_interval <= 0) return false;
+    if (item.status === 'broken') return false;
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const lastTime = item.last_maintained || item.created_at || 0;
+    return Date.now() >= lastTime + item.maintenance_interval * DAY_MS;
   };
 
   const filteredEquipment = useMemo(() => {
@@ -255,6 +279,13 @@ function Equipment() {
                     )
                   }
                   actions={[
+                    ...(isMaintenanceDue(item)
+                      ? [
+                          <Tooltip key="maintain" title="标记已维护">
+                            <ToolOutlined style={{ color: '#faad14' }} onClick={() => handleMarkMaintained(item)} />
+                          </Tooltip>,
+                        ]
+                      : []),
                     <Tooltip key="edit" title="编辑">
                       <EditOutlined onClick={() => handleEdit(item)} />
                     </Tooltip>,
@@ -309,6 +340,18 @@ function Equipment() {
                             <Text type="secondary" ellipsis={{ tooltip: item.notes }}>
                               {item.notes}
                             </Text>
+                          </div>
+                        )}
+                        {item.maintenance_interval > 0 && (
+                          <div className="equipment-meta-item" style={{ marginTop: 4 }}>
+                            {isMaintenanceDue(item) ? (
+                              <Tag color="warning">需要维护</Tag>
+                            ) : (
+                              <Text type="secondary">
+                                维护周期：{item.maintenance_interval}天
+                                {item.last_maintained && ` · 上次：${dayjs(item.last_maintained).format('MM-DD')}`}
+                              </Text>
+                            )}
                           </div>
                         )}
                       </div>

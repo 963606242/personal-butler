@@ -28,6 +28,8 @@ import {
   DatabaseOutlined,
   BookOutlined,
   CloudSyncOutlined,
+  DownloadOutlined,
+  UploadOutlined,
 } from '@ant-design/icons';
 import useSettingsStore from '../stores/settingsStore';
 import useUserStore from '../stores/userStore';
@@ -63,6 +65,8 @@ export default function Settings() {
   const [provider, setProvider] = useState('ollama');
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [exportingData, setExportingData] = useState(false);
+  const [importingData, setImportingData] = useState(false);
   const [apiBridgeEnabled, setApiBridgeEnabled] = useState(false);
   const [apiBridgePort, setApiBridgePort] = useState(3847);
   const [apiBridgeSecret, setApiBridgeSecret] = useState('');
@@ -350,6 +354,76 @@ export default function Settings() {
     } finally {
       setResetting(false);
     }
+  };
+
+  const handleExportData = async () => {
+    setExportingData(true);
+    try {
+      const result = await syncService.exportData();
+      if (!result.success) {
+        message.error(result.error || '导出失败');
+        return;
+      }
+      const json = JSON.stringify(result.payload, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `personal-butler-backup-${dayjs().format('YYYYMMDD-HHmmss')}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      message.success('数据已导出');
+    } catch (e) {
+      message.error(e?.message || '导出失败');
+    } finally {
+      setExportingData(false);
+    }
+  };
+
+  const handleImportData = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setImportingData(true);
+      try {
+        const text = await file.text();
+        const payload = JSON.parse(text);
+        if (!payload || !payload.data || typeof payload.data !== 'object') {
+          message.error('无效的备份文件：缺少 data 字段');
+          return;
+        }
+        Modal.confirm({
+          title: '确认导入数据',
+          content: '导入将覆盖当前所有数据（日程、习惯、服装、装备等），此操作不可撤销。确定继续吗？',
+          okText: '确认导入',
+          okType: 'danger',
+          cancelText: '取消',
+          onOk: async () => {
+            try {
+              const result = await syncService.importData(payload);
+              if (!result.success) {
+                message.error(result.error || '导入失败');
+                return;
+              }
+              message.success('数据已导入，正在刷新页面...');
+              setTimeout(() => window.location.reload(), 1000);
+            } catch (err) {
+              message.error(err?.message || '导入失败');
+            }
+          },
+        });
+      } catch (parseErr) {
+        message.error('文件解析失败，请确认是有效的 JSON 备份文件');
+      } finally {
+        setImportingData(false);
+      }
+    };
+    input.click();
   };
 
   const configuredCount = API_KEY_CONFIGS.filter((c) => isKeyConfigured(c.key)).length;
@@ -801,6 +875,39 @@ export default function Settings() {
       ),
       children: (
         <Card size="small" type="inner">
+          <div style={{ marginBottom: 20 }}>
+            <Typography.Title level={5} style={{ marginBottom: 8 }}>数据备份与恢复</Typography.Title>
+            <Typography.Paragraph type="secondary" style={{ marginBottom: 12, fontSize: 13 }}>
+              导出为 JSON 文件，可用于设备迁移或数据恢复。导入将覆盖所有本地数据。
+            </Typography.Paragraph>
+            <Space>
+              <Button
+                icon={<DownloadOutlined />}
+                onClick={handleExportData}
+                loading={exportingData}
+              >
+                导出数据备份
+              </Button>
+              <Button
+                icon={<UploadOutlined />}
+                onClick={handleImportData}
+                loading={importingData}
+              >
+                导入数据备份
+              </Button>
+            </Space>
+          </div>
+          {databasePath && (
+            <Form.Item
+              label={t('settings.sections.databasePath', '数据库文件位置')}
+              extra={t('settings.sections.databasePathExtra', '备份或外部查看时可复制此路径；详见 docs/data-storage.md')}
+              style={{ marginBottom: 16 }}
+            >
+              <Typography.Paragraph copyable style={{ marginBottom: 0, fontFamily: 'monospace', fontSize: 13 }}>
+                {databasePath}
+              </Typography.Paragraph>
+            </Form.Item>
+          )}
           <Alert
             type="warning"
             showIcon
@@ -818,17 +925,6 @@ export default function Settings() {
             }
             style={{ marginBottom: 16 }}
           />
-          {databasePath && (
-            <Form.Item
-              label={t('settings.sections.databasePath', '数据库文件位置')}
-              extra={t('settings.sections.databasePathExtra', '备份或外部查看时可复制此路径；详见 docs/data-storage.md')}
-              style={{ marginBottom: 16 }}
-            >
-              <Typography.Paragraph copyable style={{ marginBottom: 0, fontFamily: 'monospace', fontSize: 13 }}>
-                {databasePath}
-              </Typography.Paragraph>
-            </Form.Item>
-          )}
           <Button
             type="primary"
             danger

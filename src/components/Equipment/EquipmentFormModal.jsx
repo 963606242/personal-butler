@@ -2,7 +2,7 @@
  * 装备新建/编辑表单弹窗
  * 支持图片上传、分类、状态等
  */
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Modal, Form, Input, Select, DatePicker, InputNumber, Button, Row, Col, message } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -122,6 +122,9 @@ function EquipmentFormModal({ open, editing, onCancel, onOk, form }) {
             </Form.Item>
           </Col>
         </Row>
+        <Form.Item name="maintenance_interval" label="维护周期（天）" tooltip="设置后会在到期时提醒维护">
+          <InputNumber style={{ width: '100%' }} placeholder="如 30 表示每 30 天维护一次" min={1} precision={0} />
+        </Form.Item>
         <Form.Item name="image_path" label="图片">
           <div>
             {imagePreview && (
@@ -146,4 +149,4 @@ function EquipmentFormModal({ open, editing, onCancel, onOk, form }) {
   );
 }
 
-export default EquipmentFormModal;
+export default memo(EquipmentFormModal);

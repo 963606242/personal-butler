@@ -28,6 +28,7 @@ import dayjs from 'dayjs';
 import useNewsStore from '../stores/newsStore';
 import useUserStore from '../stores/userStore';
 import { getLogger } from '../services/logger-client';
+import { useI18n } from '../context/I18nContext';
 import {
   isApiKeyConfigured,
   isIntlApiConfigured,
@@ -44,6 +45,7 @@ const NEWS_SHOW_IMAGES_STORAGE_KEY = 'news-show-images';
 
 function News() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [searchText, setSearchText] = useState('');
   const [activeTab, setActiveTab] = useState('cn');
   const [selectedCategoryCn, setSelectedCategoryCn] = useState('guonei');
@@ -129,7 +131,7 @@ function News() {
       setActiveTab('search');
     } catch (e) {
       logger.error('News', '搜索失败', e);
-      message.error('搜索失败，请稍后重试');
+      message.error(t('news.messages.searchFailed', '搜索失败，请稍后重试'));
     }
   };
 
@@ -140,7 +142,7 @@ function News() {
       await fetchNewsByCategoryBySource(category, 'cn', 20);
     } catch (e) {
       logger.error('News', `加载国内分类 ${category} 失败`, e);
-      message.error('加载失败，请重试');
+      message.error(t('news.messages.loadFailed', '加载失败，请重试'));
     }
   };
 
@@ -150,16 +152,16 @@ function News() {
       await fetchNewsByCategoryBySource(category, 'intl', 20);
     } catch (e) {
       logger.error('News', `加载国外分类 ${category} 失败`, e);
-      message.error('加载失败，请重试');
+      message.error(t('news.messages.loadFailed', '加载失败，请重试'));
     }
   };
 
   const handleRefreshCn = async () => {
     try {
       await fetchHeadlinesBySource({ source: 'cn', skipCache: true });
-      message.success('已刷新');
+      message.success(t('news.messages.refreshed', '已刷新'));
     } catch (e) {
-      message.error('刷新失败');
+      message.error(t('news.messages.refreshFailed', '刷新失败'));
     }
   };
 
@@ -168,10 +170,10 @@ function News() {
     try {
       await fetchHeadlinesBySource({ source: 'intl', skipCache: true });
       await fetchNewsByCategoryBySource(selectedCategoryIntl, 'intl', 20, { skipCache: true });
-      message.success('已刷新');
+      message.success(t('news.messages.refreshed', '已刷新'));
     } catch (e) {
       setIntlError(true);
-      message.error('刷新失败，请检查网络或代理后重试');
+      message.error(t('news.messages.refreshFailedNetwork', '刷新失败，请检查网络或代理后重试'));
     }
   };
 
@@ -182,27 +184,27 @@ function News() {
       await fetchNewsByCategoryBySource('general', 'intl', 20);
     } catch (e) {
       setIntlError(true);
-      message.error('国外新闻加载失败，请检查网络或代理后重试');
+      message.error(t('news.messages.intlLoadFailed', '国外新闻加载失败，请检查网络或代理后重试'));
     }
   };
 
   const handleGenerateMorningReport = async () => {
     try {
       await getTodayMorningReport();
-      message.success('早报已生成');
+      message.success(t('news.messages.morningGenerated', '早报已生成'));
     } catch (e) {
       logger.error('News', '生成早报失败', e);
-      message.error('生成早报失败');
+      message.error(t('news.messages.morningFailed', '生成早报失败'));
     }
   };
 
   const handleGenerateEveningReport = async () => {
     try {
       await getTodayEveningReport();
-      message.success('晚报已生成');
+      message.success(t('news.messages.eveningGenerated', '晚报已生成'));
     } catch (e) {
       logger.error('News', '生成晚报失败', e);
-      message.error('生成晚报失败');
+      message.error(t('news.messages.eveningFailed', '生成晚报失败'));
     }
   };
 
@@ -308,7 +310,7 @@ function News() {
     if (!items?.length) return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无" />;
     return (
       <List
-        grid={{ gutter: 12, column: 2 }}
+        grid={{ gutter: 12, xs: 1, sm: 1, md: 2, lg: 2, xl: 3 }}
         dataSource={items}
         renderItem={(item) => (
           <List.Item>
@@ -750,7 +752,7 @@ function News() {
               fetchNewsByCategoryBySource('general', 'intl', 20),
             ]).catch(() => {
               setIntlError(true);
-              message.warning('国外新闻加载失败，请检查网络或代理后重试');
+              message.warning(t('news.messages.intlLoadFailed', '国外新闻加载失败，请检查网络或代理后重试'));
             });
           }
         }}

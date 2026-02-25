@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Modal, Form, Input, Select, DatePicker, InputNumber, Upload, message, Button } from 'antd';
 import { PictureOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -10,7 +10,9 @@ import {
   WASH_STATUS,
 } from '../../stores/clothingStore';
 import { selectImageFile } from '../../platform';
+import { getLogger } from '../../services/logger-client';
 
+const logger = getLogger();
 const { TextArea } = Input;
 
 function ClothingFormModal({ visible, form, onOk, onCancel, editingClothing }) {
@@ -74,7 +76,7 @@ function ClothingFormModal({ visible, form, onOk, onCancel, editingClothing }) {
       }
     } catch (error) {
       message.error('选择图片失败');
-      console.error('选择图片失败:', error);
+      logger.error('ClothingForm', '选择图片失败:', error);
     }
   };
 
@@ -85,7 +87,7 @@ function ClothingFormModal({ visible, form, onOk, onCancel, editingClothing }) {
       form.resetFields();
       setImagePreview(null);
     } catch (error) {
-      console.error('表单验证失败:', error);
+      logger.error('ClothingForm', '表单验证失败:', error);
     }
   };
 
@@ -219,4 +221,4 @@ function ClothingFormModal({ visible, form, onOk, onCancel, editingClothing }) {
   );
 }
 
-export default ClothingFormModal;
+export default memo(ClothingFormModal);

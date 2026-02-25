@@ -59,7 +59,7 @@ const useUserStore = create((set, get) => ({
 
       return { userId, encryptionKey };
     } catch (error) {
-      console.error('初始化用户失败:', error);
+      logger.error('UserStore', '初始化用户失败:', error);
       throw error;
     }
   },

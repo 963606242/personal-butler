@@ -35,6 +35,7 @@ import useClothingStore, {
 import useOutfitStore from '../stores/outfitStore';
 import useUserStore from '../stores/userStore';
 import { getLogger } from '../services/logger-client';
+import { useI18n } from '../context/I18nContext';
 import ClothingFormModal from '../components/Clothing/ClothingFormModal';
 import FriendlyEmpty from '../components/FriendlyEmpty';
 import { useNavigate } from 'react-router-dom';
@@ -45,6 +46,7 @@ const logger = getLogger();
 
 function Clothing() {
   const [form] = Form.useForm();
+  const { t } = useI18n();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingClothing, setEditingClothing] = useState(null);
   const [searchText, setSearchText] = useState('');
@@ -62,7 +64,7 @@ function Clothing() {
     if (!isInitialized || !currentUser) return;
     loadClothing().catch((e) => {
       logger.error('Clothing', '加载服装失败', e);
-      message.error('加载服装失败');
+      message.error(t('clothing.messages.loadFailed', '加载服装失败'));
     });
   }, [isInitialized, currentUser, loadClothing]);
 
@@ -80,26 +82,26 @@ function Clothing() {
     try {
       if (editingClothing) {
         await updateClothing(editingClothing.id, values);
-        message.success('已更新服装');
+        message.success(t('clothing.messages.updated', '已更新服装'));
       } else {
         await createClothing(values);
-        message.success('已添加服装');
+        message.success(t('clothing.messages.created', '已添加服装'));
       }
       setModalVisible(false);
       setEditingClothing(null);
     } catch (e) {
       logger.error('Clothing', '保存服装失败', e);
-      message.error('保存失败');
+      message.error(t('clothing.messages.saveFailed', '保存失败'));
     }
   };
 
   const handleDelete = async (item) => {
     try {
       await deleteClothing(item.id);
-      message.success('已删除服装');
+      message.success(t('clothing.messages.deleted', '已删除服装'));
     } catch (e) {
       logger.error('Clothing', '删除服装失败', e);
-      message.error('删除失败');
+      message.error(t('clothing.messages.deleteFailed', '删除失败'));
     }
   };
 

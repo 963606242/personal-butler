@@ -1,4 +1,7 @@
 // 加密服务 - 使用Web Crypto API (浏览器) 或 Node.js crypto (Electron主进程)
+import { getLogger } from './logger-client';
+
+const logger = getLogger();
 
 class CryptoService {
   constructor() {
@@ -66,7 +69,7 @@ class CryptoService {
         iv: Array.from(iv),
       };
     } catch (error) {
-      console.error('加密错误:', error);
+      logger.error('Crypto', '加密错误:', error);
       throw error;
     }
   }
@@ -87,7 +90,7 @@ class CryptoService {
       const decryptedText = decoder.decode(decrypted);
       return JSON.parse(decryptedText);
     } catch (error) {
-      console.error('解密错误:', error);
+      logger.error('Crypto', '解密错误:', error);
       throw error;
     }
   }

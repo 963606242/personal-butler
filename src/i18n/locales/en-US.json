@@ -47,6 +47,26 @@
     "deleteConfirm": "Are you sure you want to delete this entry?",
     "noEntries": "No entries for this day. Click \"New Entry\" to start recording."
   },
+  "diaryForm": {
+    "selectImageFailed": "Failed to select image",
+    "videoSelected": "Video selected",
+    "selectVideoFailed": "Failed to select video",
+    "recordingStarted": "Recording started",
+    "recordingFailed": "Recording failed",
+    "recordingComplete": "Recording complete",
+    "recordingCanceled": "Recording canceled",
+    "pleaseAddImage": "Please add an image first",
+    "imageAnalysisSaved": "Image analysis saved for search",
+    "imageAnalysisFailed": "Image analysis failed",
+    "pleaseRecordAudio": "Please record or select audio first",
+    "transcribeElectronOnly": "Audio transcription only works in Electron with OpenAI API Key configured",
+    "pleaseConfigureApiKey": "Please configure OpenAI API Key in settings first",
+    "transcribeSaved": "Transcription saved for search",
+    "transcribeFailed": "Transcription failed",
+    "updateSuccess": "Updated successfully",
+    "createSuccess": "Created successfully",
+    "saveFailed": "Save failed"
+  },
   "fun": {
     "pageTitle": "Fun tools",
     "pageDesc": "Kinship, fortune draw, dice, coin flip, random quote — light entertainment.",
@@ -187,7 +207,12 @@
     "batchCheckInConfirm": "Check in today for these habits?",
     "batchCheckInOk": "Confirm",
     "batchCheckInDone": "Checked in {{n}} habits",
-    "batchCheckInEmpty": "No habits to check in for current period"
+    "batchCheckInEmpty": "No habits to check in for current period",
+    "countdown": "Countdown",
+    "countdownToday": "Today!",
+    "countdownDays": "{{n}} days left",
+    "writeDiary": "Write diary",
+    "chatWithAi": "Chat with AI"
   },
   "settings": {
     "title": "Settings",
@@ -296,18 +321,56 @@
     },
     "equipment": {
       "description": "No equipment records yet, add your first item",
-      "action": "Add equipment"
+      "action": "Add equipment",
+      "messages": {
+        "updated": "Equipment updated",
+        "created": "Equipment created",
+        "saveFailed": "Save failed",
+        "deleted": "Equipment deleted",
+        "deleteFailed": "Delete failed",
+        "maintained": "{{name}} marked as maintained",
+        "maintainFailed": "Mark failed"
+      }
     },
     "clothing": {
       "description": "No clothing data yet, add a few favorites first",
-      "action": "Add clothing"
+      "action": "Add clothing",
+      "messages": {
+        "loadFailed": "Failed to load clothing",
+        "updated": "Clothing updated",
+        "created": "Clothing added",
+        "saveFailed": "Save failed",
+        "deleted": "Clothing deleted",
+        "deleteFailed": "Delete failed"
+      }
     },
     "outfits": {
       "description": "No outfits yet, try creating one",
-      "action": "New outfit"
+      "action": "New outfit",
+      "messages": {
+        "loadFailed": "Failed to load outfits",
+        "updated": "Outfit updated",
+        "created": "Outfit created",
+        "saveFailed": "Save failed",
+        "deleted": "Outfit deleted",
+        "deleteFailed": "Delete failed",
+        "recommendFailed": "Failed to get recommendations"
+      }
     },
     "news": {
-      "description": "No news for now, check back later"
+      "description": "No news for now, check back later",
+      "messages": {
+        "searchFailed": "Search failed, please try again later",
+        "loadFailed": "Failed to load, please retry",
+        "refreshed": "Refreshed",
+        "refreshFailed": "Refresh failed",
+        "refreshFailedNetwork": "Refresh failed, please check network or proxy",
+        "intlLoadFailed": "Failed to load international news, please check network or proxy",
+        "morningGenerated": "Morning report generated",
+        "morningFailed": "Failed to generate morning report",
+        "eveningGenerated": "Evening report generated",
+        "eveningFailed": "Failed to generate evening report"
+      }
     },
     "newsSearch": {
       "description": "Enter a keyword to search"
@@ -327,6 +390,45 @@
     },
     "generic": {
       "description": "Nothing here yet, go explore other places"
+    }
+  },
+  "profile": {
+    "messages": {
+      "loadFailed": "Failed to load user info",
+      "updateSuccess": "Profile updated successfully",
+      "updateFailed": "Update failed",
+      "formInvalid": "Please check the form for errors"
+    }
+  },
+  "schedule": {
+    "messages": {
+      "saveFailed": "Save failed",
+      "updated": "Schedule updated",
+      "created": "Schedule created",
+      "deleted": "Schedule deleted",
+      "deleteFailed": "Delete failed"
+    }
+  },
+  "aiChat": {
+    "messages": {
+      "carryDataFailed": "Failed to load context data, sending question only",
+      "saveFailed": "Save failed, please retry",
+      "sendFailed": "Send failed, please retry",
+      "cleared": "Chat history cleared",
+      "clearFailed": "Clear failed",
+      "retryFailed": "Retry failed, please try again later",
+      "generateFailed": "Generation failed, please retry",
+      "savedAsSchedule": "Saved as schedule",
+      "savedAsHabit": "Saved as habit"
+    }
+  },
+  "weather": {
+    "messages": {
+      "searchFailed": "City search failed",
+      "citySwitched": "Switched to {{city}}",
+      "switchFailed": "City switch failed",
+      "refreshed": "Weather updated",
+      "refreshFailed": "Refresh failed"
     }
   },
   "habits": {

@@ -9,9 +9,11 @@ import {
   DatePicker,
   message,
   Typography,
+  Tag,
 } from 'antd';
 import dayjs from 'dayjs';
 import useScheduleStore from '../../stores/scheduleStore';
+import { getScheduleConflicts } from '../../utils/schedule-conflict';
 import { getLogger } from '../../services/logger-client';
 
 const { TextArea } = Input;
@@ -39,6 +41,7 @@ export default function BatchSaveScheduleModal({
   const [baseDate, setBaseDate] = useState(dayjs());
   const [saving, setSaving] = useState(false);
   const createSchedule = useScheduleStore((s) => s.createSchedule);
+  const getSchedulesByDate = useScheduleStore((s) => s.getSchedulesByDate);
 
   useEffect(() => {
     if (open && Array.isArray(rawItems) && rawItems.length > 0) {
@@ -77,24 +80,78 @@ export default function BatchSaveScheduleModal({
       message.warning('请至少勾选一项');
       return;
     }
+
+    // ===== 冲突检测 =====
+    const d = baseDate;
+    const existingInstances = getSchedulesByDate(d.toDate());
+
+    // 构建候选日程的时间戳
+    const candidates = indices.map((i) => {
+      const it = items[i];
+      const [sh, sm] = (it.startTime || '09:00').split(':').map(Number);
+      const [eh, em] = (it.endTime || '09:30').split(':').map(Number);
+      const start = d.hour(sh).minute(sm || 0).second(0).millisecond(0);
+      const end = d.hour(eh).minute(em || 0).second(0).millisecond(0);
+      return { index: i, title: it.title, start_time: start.valueOf(), end_time: end.valueOf() };
+    });
+
+    // 检测与已有日程的冲突
+    const conflictMessages = [];
+    for (const c of candidates) {
+      const conflicts = getScheduleConflicts(existingInstances, c);
+      if (conflicts.length > 0) {
+        const titles = conflicts.map((x) => x.title).join('、');
+        conflictMessages.push(`「${c.title}」与已有日程「${titles}」时间重叠`);
+      }
+    }
+
+    // 检测批量项之间的互相冲突
+    for (let i = 0; i < candidates.length; i++) {
+      for (let j = i + 1; j < candidates.length; j++) {
+        const a = candidates[i];
+        const b = candidates[j];
+        if (a.start_time < b.end_time && a.end_time > b.start_time) {
+          conflictMessages.push(`「${a.title}」与「${b.title}」时间重叠`);
+        }
+      }
+    }
+
+    if (conflictMessages.length > 0) {
+      const ok = await new Promise((resolve) => {
+        Modal.confirm({
+          title: '检测到日程时间冲突',
+          content: (
+            <div style={{ maxHeight: 200, overflow: 'auto' }}>
+              {conflictMessages.map((msg, idx) => (
+                <div key={idx} style={{ marginBottom: 4 }}>
+                  <Tag color="orange" style={{ marginRight: 4 }}>冲突</Tag>{msg}
+                </div>
+              ))}
+            </div>
+          ),
+          okText: '仍要保存',
+          cancelText: '返回修改',
+          onOk: () => resolve(true),
+          onCancel: () => resolve(false),
+        });
+      });
+      if (!ok) return;
+    }
+
+    // ===== 执行保存 =====
     setSaving(true);
     try {
-      const d = baseDate;
-      for (const i of indices) {
-        const it = items[i];
-        const [sh, sm] = (it.startTime || '09:00').split(':').map(Number);
-        const [eh, em] = (it.endTime || '09:30').split(':').map(Number);
-        const start = d.hour(sh).minute(sm || 0).second(0).millisecond(0).toDate();
-        const end = d.hour(eh).minute(em || 0).second(0).millisecond(0).toDate();
+      for (const c of candidates) {
+        const it = items[c.index];
         await createSchedule({
           title: it.title,
           date: d.toDate(),
-          startTime: start,
-          endTime: end,
+          startTime: new Date(c.start_time),
+          endTime: new Date(c.end_time),
           notes: it.notes || null,
         });
       }
-      message.success(`已保存 ${indices.length} 条日程`);
+      message.success(`已保存 ${candidates.length} 条日程`);
       onSuccess?.();
     } catch (e) {
       logger.error('BatchSaveScheduleModal', '保存失败', e);

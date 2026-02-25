@@ -4,7 +4,9 @@
  */
 
 import { CREATE_TABLES_SQL } from './database-schema';
+import { getLogger } from './logger-client';
 
+const logger = getLogger();
 const IDB_NAME = 'PersonalButlerDB';
 const IDB_STORE = 'sqlite';
 const IDB_KEY = 'db';
@@ -12,6 +14,24 @@ const IDB_KEY = 'db';
 let SQL = null;
 let db = null;
 let initPromise = null;
+
+function migrateExistingDb() {
+  if (!db) return;
+  try {
+    const cols = db.exec('PRAGMA table_info(equipment)');
+    if (cols.length > 0) {
+      const names = cols[0].values.map((r) => r[1]);
+      if (!names.includes('maintenance_interval')) {
+        db.run('ALTER TABLE equipment ADD COLUMN maintenance_interval INTEGER');
+      }
+      if (!names.includes('last_maintained')) {
+        db.run('ALTER TABLE equipment ADD COLUMN last_maintained INTEGER');
+      }
+    }
+  } catch (e) {
+    logger.warn('DB-Web', 'equipment migration skipped:', e?.message);
+  }
+}
 
 function getWasmPath() {
   if (typeof window === 'undefined') return '';
@@ -73,6 +93,7 @@ export async function initWebDb() {
     const buffer = await readFromIndexedDB(idb);
     if (buffer && buffer.byteLength > 0) {
       db = new SQL.Database(new Uint8Array(buffer));
+      migrateExistingDb();
     } else {
       db = new SQL.Database();
       db.run('PRAGMA foreign_keys = ON');
@@ -80,7 +101,7 @@ export async function initWebDb() {
         try {
           db.run(sql);
         } catch (e) {
-          console.warn('[DB-Web] createTables:', sql.slice(0, 60), e?.message);
+          logger.warn('DB-Web', 'createTables:', sql.slice(0, 60), e?.message);
         }
       }
       await persist(idb);
@@ -171,7 +192,7 @@ export function exportForSync() {
       const rows = query(`SELECT * FROM ${table}`);
       out.data[table] = rows;
     } catch (e) {
-      console.warn('[DB-Web] exportForSync 跳过表', table, e?.message);
+      logger.warn('DB-Web', 'exportForSync 跳过表', table, e?.message);
       out.data[table] = [];
     }
   }

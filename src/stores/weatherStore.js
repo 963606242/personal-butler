@@ -7,6 +7,7 @@ import { getDatabase } from '../services/database';
 import { getLogger } from '../services/logger-client';
 import useUserStore from './userStore';
 import * as weatherAPI from '../services/weather-api';
+import { getCache, setCache } from '../services/cache-service';
 import dayjs from 'dayjs';
 
 const logger = getLogger();
@@ -98,42 +99,6 @@ const useWeatherStore = create((set, get) => ({
     }
   },
 
-  /** 从缓存获取天气（key 含日期，如 weather_39.9_116.4_2026-01-28） */
-  async getWeatherFromCache(fullKey) {
-    try {
-      const db = await getDatabase();
-      const cachedList = await db.query(
-        'SELECT value, expires_at FROM cache WHERE key = ?',
-        [`weather_${fullKey}`]
-      );
-      const cached = cachedList.length > 0 ? cachedList[0] : null;
-
-      if (cached && cached.expires_at > Date.now()) {
-        return JSON.parse(cached.value);
-      }
-
-      return null;
-    } catch (e) {
-      logger.warn('WeatherStore', '获取缓存失败', e);
-      return null;
-    }
-  },
-
-  /** 保存天气到缓存（同城同日缓存，过期时间当日结束） */
-  async saveWeatherToCache(fullKey, weatherData, expiresAt = null) {
-    try {
-      const db = await getDatabase();
-      const exp = expiresAt != null ? expiresAt : getEndOfTodayTs();
-      await db.execute(
-        `INSERT OR REPLACE INTO cache (key, value, expires_at, created_at)
-         VALUES (?, ?, ?, ?)`,
-        [`weather_${fullKey}`, JSON.stringify(weatherData), exp, Date.now()]
-      );
-    } catch (e) {
-      logger.warn('WeatherStore', '保存缓存失败', e);
-    }
-  },
-
   /** 获取当前天气（同城同日缓存，城市搜索保持实时不缓存）。options.skipCache 强制请求 API。 */
   async fetchCurrentWeather(city = null, options = {}) {
     const targetCity = city || get().currentCity;
@@ -146,10 +111,10 @@ const useWeatherStore = create((set, get) => ({
     try {
       set({ loading: true });
       const day = getTodayStr();
-      const cacheKey = `current_${targetCity.lat}_${targetCity.lon}_${day}`;
+      const cacheKey = `weather_current_${targetCity.lat}_${targetCity.lon}_${day}`;
 
       if (!skipCache) {
-        const cached = await get().getWeatherFromCache(cacheKey);
+        const cached = await getCache(cacheKey);
         if (cached) {
           set({ currentWeather: cached, loading: false });
           return cached;
@@ -157,7 +122,7 @@ const useWeatherStore = create((set, get) => ({
       }
 
       const weather = await weatherAPI.getWeatherByCoords(targetCity.lat, targetCity.lon);
-      await get().saveWeatherToCache(cacheKey, weather);
+      await setCache(cacheKey, weather, getEndOfTodayTs());
 
       set({ currentWeather: weather, loading: false });
       return weather;
@@ -184,10 +149,10 @@ const useWeatherStore = create((set, get) => ({
     const { skipCache = false } = options;
     try {
       const day = getTodayStr();
-      const cacheKey = `forecast_${targetCity.lat}_${targetCity.lon}_${day}`;
+      const cacheKey = `weather_forecast_${targetCity.lat}_${targetCity.lon}_${day}`;
 
       if (!skipCache) {
-        const cached = await get().getWeatherFromCache(cacheKey);
+        const cached = await getCache(cacheKey);
         if (cached && Array.isArray(cached)) {
           set({ forecast: cached });
           return cached;
@@ -195,7 +160,7 @@ const useWeatherStore = create((set, get) => ({
       }
 
       const forecast = await weatherAPI.getForecast(targetCity.lat, targetCity.lon);
-      await get().saveWeatherToCache(cacheKey, forecast);
+      await setCache(cacheKey, forecast, getEndOfTodayTs());
 
       set({ forecast });
       return forecast;

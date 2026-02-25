@@ -30,7 +30,9 @@ import dayjs from 'dayjs';
 import useOutfitStore from '../stores/outfitStore';
 import useClothingStore from '../stores/clothingStore';
 import useUserStore from '../stores/userStore';
+import useWeatherStore from '../stores/weatherStore';
 import { getLogger } from '../services/logger-client';
+import { useI18n } from '../context/I18nContext';
 import FriendlyEmpty from '../components/FriendlyEmpty';
 
 const { Title, Text } = Typography;
@@ -38,6 +40,7 @@ const logger = getLogger();
 
 function Outfits() {
   const [form] = Form.useForm();
+  const { t } = useI18n();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingOutfit, setEditingOutfit] = useState(null);
   const [recommendModalVisible, setRecommendModalVisible] = useState(false);
@@ -48,12 +51,13 @@ function Outfits() {
   const { outfits, loading, loadOutfits, createOutfit, updateOutfit, deleteOutfit, recommendOutfit } =
     useOutfitStore();
   const { clothing, loadClothing } = useClothingStore();
+  const { currentWeather } = useWeatherStore();
 
   useEffect(() => {
     if (!isInitialized || !currentUser) return;
     loadOutfits().catch((e) => {
       logger.error('Outfits', '加载搭配失败', e);
-      message.error('加载搭配失败');
+      message.error(t('outfits.messages.loadFailed', '加载搭配失败'));
     });
     loadClothing().catch((e) => {
       logger.error('Outfits', '加载服装失败', e);
@@ -86,38 +90,38 @@ function Outfits() {
     try {
       if (editingOutfit) {
         await updateOutfit(editingOutfit.id, values);
-        message.success('已更新搭配');
+        message.success(t('outfits.messages.updated', '已更新搭配'));
       } else {
         await createOutfit(values);
-        message.success('已创建搭配');
+        message.success(t('outfits.messages.created', '已创建搭配'));
       }
       setModalVisible(false);
       setEditingOutfit(null);
     } catch (e) {
       logger.error('Outfits', '保存搭配失败', e);
-      message.error('保存失败');
+      message.error(t('outfits.messages.saveFailed', '保存失败'));
     }
   };
 
   const handleDelete = async (outfit) => {
     try {
       await deleteOutfit(outfit.id);
-      message.success('已删除搭配');
+      message.success(t('outfits.messages.deleted', '已删除搭配'));
     } catch (e) {
       logger.error('Outfits', '删除搭配失败', e);
-      message.error('删除失败');
+      message.error(t('outfits.messages.deleteFailed', '删除失败'));
     }
   };
 
   const handleRecommend = async () => {
     try {
       setLoadingRecommendations(true);
-      const recs = await recommendOutfit({ excludeDirty: true });
+      const recs = await recommendOutfit({ excludeDirty: true, weather: currentWeather || undefined });
       setRecommendations(recs);
       setRecommendModalVisible(true);
     } catch (e) {
       logger.error('Outfits', '获取推荐失败', e);
-      message.error('获取推荐失败');
+      message.error(t('outfits.messages.recommendFailed', '获取推荐失败'));
     } finally {
       setLoadingRecommendations(false);
     }

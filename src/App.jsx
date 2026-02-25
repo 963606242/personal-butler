@@ -17,7 +17,9 @@ import Diary from './pages/Diary';
 import Settings from './pages/Settings';
 import FunTools from './pages/FunTools';
 import { OnboardingProvider } from './context/OnboardingContext';
+import { getLogger } from './services/logger-client';
 
+const logger = getLogger();
 const { Content } = Layout;
 
 // 错误边界组件
@@ -32,7 +34,7 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('应用错误:', error, errorInfo);
+    logger.error('App', '应用错误:', error, errorInfo);
   }
 
   render() {

@@ -40,6 +40,10 @@ import {
   RobotOutlined,
   UnorderedListOutlined,
   ScheduleOutlined,
+  FullscreenOutlined,
+  FullscreenExitOutlined,
+  LeftOutlined,
+  RightOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router-dom';
@@ -66,7 +70,57 @@ function Schedule() {
   const [analysisRange, setAnalysisRange] = useState('week'); // 'week' | 'month'
   const [dayViewDate, setDayViewDate] = useState(new Date()); // 日视图选中的日期
   const [hoveredCell, setHoveredCell] = useState(null); // 悬停的单元格日期
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768); // 是否为移动端
+  const [calendarMode, setCalendarMode] = useState('month'); // 日历模式: 'month' | 'week'
+  const [isFullscreen, setIsFullscreen] = useState(false); // 全屏模式
+  const [currentWeekStart, setCurrentWeekStart] = useState(dayjs().startOf('week')); // 周视图起始日期
   const { t } = useI18n();
+  
+  // 监听窗口大小变化
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      // 小屏自动切换到周视图
+      if (mobile && calendarMode === 'month') {
+        setCalendarMode('week');
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [calendarMode]);
+
+  // ESC 键退出全屏
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreen]);
+
+  // 周视图切换
+  const handleWeekChange = (direction) => {
+    setCurrentWeekStart(prev => 
+      direction === 'prev' ? prev.subtract(1, 'week') : prev.add(1, 'week')
+    );
+  };
+
+  // 回到今天
+  const handleGoToToday = () => {
+    setCurrentWeekStart(dayjs().startOf('week'));
+  };
+
+  // 获取当前周的日期数组
+  const weekDays = useMemo(() => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      days.push(currentWeekStart.add(i, 'day'));
+    }
+    return days;
+  }, [currentWeekStart]);
   
   const {
     schedules,
@@ -175,7 +229,7 @@ function Schedule() {
       await doSave(values, dateValue, startTimeValue, endTimeValue);
     } catch (error) {
       logger.error('Schedule', '保存日程失败:', error);
-      message.error('保存失败: ' + error.message);
+      message.error(t('schedule.messages.saveFailed', '保存失败') + ': ' + error.message);
     }
   };
 
@@ -208,10 +262,10 @@ function Schedule() {
 
     if (editingSchedule) {
       await updateSchedule(editingSchedule.id, scheduleData);
-      message.success('日程更新成功');
+      message.success(t('schedule.messages.updated', '日程更新成功'));
     } else {
       await createSchedule(scheduleData);
-      message.success('日程创建成功');
+      message.success(t('schedule.messages.created', '日程创建成功'));
     }
 
     setModalVisible(false);
@@ -260,10 +314,10 @@ function Schedule() {
   const handleDelete = async (scheduleId) => {
     try {
       await deleteSchedule(scheduleId);
-      message.success('日程删除成功');
+      message.success(t('schedule.messages.deleted', '日程删除成功'));
     } catch (error) {
       logger.error('Schedule', '删除日程失败:', error);
-      message.error('删除失败: ' + error.message);
+      message.error(t('schedule.messages.deleteFailed', '删除失败') + ': ' + error.message);
     }
   };
 
@@ -441,14 +495,14 @@ function Schedule() {
 
     return (
       <div
-        className="calendar-cell-modern"
+        className={`calendar-cell-modern ${isMobile ? 'calendar-cell-compact' : ''}`}
         style={{
-          minHeight: '90px',
-          padding: '8px 6px',
+          minHeight: isMobile ? undefined : '90px',
+          padding: isMobile ? undefined : '8px 6px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '4px',
-          borderRadius: '12px',
+          gap: isMobile ? '2px' : '4px',
+          borderRadius: isMobile ? undefined : '12px',
           background: cellBg,
           border: cellBorder,
           boxShadow: cellShadow,
@@ -464,37 +518,40 @@ function Schedule() {
       >
         {/* 日期行：左为日期，右为休/班小标 + 日程数 */}
         <div
+          className="calendar-date-row"
           style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            minHeight: '24px',
-            marginBottom: '2px',
+            minHeight: isMobile ? undefined : '24px',
+            marginBottom: isMobile ? undefined : '2px',
           }}
         >
           <span
+            className={`calendar-date-num ${isToday ? 'is-today' : ''}`}
             style={{
-              fontSize: isToday ? '18px' : '15px',
+              fontSize: isToday ? (isMobile ? '14px' : '18px') : (isMobile ? '13px' : '15px'),
               fontWeight: isToday ? 700 : 600,
               color: dateColor,
-              lineHeight: '24px',
+              lineHeight: isMobile ? undefined : '24px',
               transition: 'transform 0.2s ease, font-size 0.2s ease',
-              transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+              transform: isHovered && !isMobile ? 'scale(1.1)' : 'scale(1)',
             }}
           >
             {value.date()}
           </span>
-          <Space size={6} style={{ alignItems: 'center' }}>
+          <Space size={isMobile ? 3 : 6} style={{ alignItems: 'center' }}>
             {restLabel && (
               <span
+                className="calendar-rest-label"
                 style={{
-                  fontSize: '10px',
+                  fontSize: isMobile ? '8px' : '10px',
                   fontWeight: 600,
                   color: restLabel === '休' ? '#0958d9' : '#cf1322',
                   background: restLabel === '休' ? 'rgba(9,88,217,.12)' : 'rgba(207,19,34,.08)',
-                  padding: '2px 6px',
-                  borderRadius: '6px',
-                  lineHeight: '16px',
+                  padding: isMobile ? '1px 4px' : '2px 6px',
+                  borderRadius: isMobile ? '4px' : '6px',
+                  lineHeight: isMobile ? '14px' : '16px',
                   backdropFilter: 'blur(6px)',
                 }}
               >
@@ -515,58 +572,106 @@ function Schedule() {
         </div>
 
         {/* 农历一行；节气/节假日一行内 Tag 并排 [情人节] [春节] */}
-        {(lunarText || tagItems.length > 0 || daySchedules.length > 0) && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '4px' }}>
-            {lunarText && (
-              <div
-                style={{
-                  fontSize: '10px',
-                  color: 'var(--calendar-text-secondary, #8c8c8c)',
-                  lineHeight: '16px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-                title={lunarText}
-              >
-                {lunarText}
-              </div>
-            )}
-            {(tagItems.length > 0 || daySchedules.length > 0) && (
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '4px',
-                  alignItems: 'center',
-                  lineHeight: '20px',
-                }}
-              >
-                {tagItems.map((item, index) => {
-                  const isJieqi = item.type === 'jieqi';
-                  const isOff = item.isOffDay;
-                  const tagStyle = {
-                    margin: 0,
-                    fontSize: '10px',
-                    lineHeight: '18px',
-                    height: '18px',
-                    padding: '0 6px',
-                    borderRadius: '6px',
-                    border: 'none',
-                    maxWidth: '100%',
+        {(lunarText || tagItems.length > 0 || daySchedules.length > 0) && (() => {
+          // 移动端限制显示数量
+          const maxVisibleTags = isMobile ? 1 : 3;
+          const allItems = [...tagItems];
+          const hasSchedules = daySchedules.length > 0;
+          const totalItems = allItems.length + (hasSchedules ? 1 : 0);
+          const showMore = isMobile && totalItems > maxVisibleTags;
+          const visibleTags = isMobile ? allItems.slice(0, maxVisibleTags - (hasSchedules ? 1 : 0)) : allItems;
+          const hiddenCount = totalItems - (isMobile ? Math.min(maxVisibleTags, visibleTags.length + (hasSchedules ? 1 : 0)) : 0);
+
+          return (
+            <div className={`calendar-cell-content ${showMore ? 'has-more' : ''}`} style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '2px' : '4px', marginBottom: isMobile ? undefined : '4px' }}>
+              {lunarText && (
+                <div
+                  className="calendar-lunar-text"
+                  style={{
+                    fontSize: isMobile ? '9px' : '10px',
+                    color: 'var(--calendar-text-secondary, #8c8c8c)',
+                    lineHeight: isMobile ? '14px' : '16px',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                    backdropFilter: 'blur(4px)',
-                  };
-                  if (isJieqi) {
+                  }}
+                  title={lunarText}
+                >
+                  {lunarText}
+                </div>
+              )}
+              {(visibleTags.length > 0 || hasSchedules) && (
+                <div
+                  className="calendar-tags-row"
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: isMobile ? '2px' : '4px',
+                    alignItems: 'center',
+                    lineHeight: isMobile ? '16px' : '20px',
+                  }}
+                >
+                  {visibleTags.map((item, index) => {
+                    const isJieqi = item.type === 'jieqi';
+                    const isOff = item.isOffDay;
+                    const tagStyle = {
+                      margin: 0,
+                      fontSize: isMobile ? '9px' : '10px',
+                      lineHeight: isMobile ? '16px' : '18px',
+                      height: isMobile ? '16px' : '18px',
+                      padding: isMobile ? '0 5px' : '0 6px',
+                      borderRadius: isMobile ? '4px' : '6px',
+                      border: 'none',
+                      maxWidth: isMobile ? '50px' : '100%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      backdropFilter: 'blur(4px)',
+                    };
+                    if (isJieqi) {
+                      return (
+                        <span
+                          key={index}
+                          className="calendar-tag-item"
+                          style={{
+                            ...tagStyle,
+                            color: '#389e0d',
+                            background: 'rgba(56,158,13,.12)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                          }}
+                          title={item.text}
+                        >
+                          {item.text}
+                        </span>
+                      );
+                    }
+                    if (isOff) {
+                      return (
+                        <span
+                          key={index}
+                          className="calendar-tag-item"
+                          style={{
+                            ...tagStyle,
+                            color: '#0958d9',
+                            background: 'rgba(9,88,217,.1)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                          }}
+                          title={item.text}
+                        >
+                          {item.text}
+                        </span>
+                      );
+                    }
                     return (
                       <span
                         key={index}
+                        className="calendar-tag-item"
                         style={{
                           ...tagStyle,
-                          color: '#389e0d',
-                          background: 'rgba(56,158,13,.12)',
+                          color: 'var(--calendar-text-secondary, #595959)',
+                          background: 'rgba(0,0,0,.05)',
                           display: 'inline-flex',
                           alignItems: 'center',
                         }}
@@ -575,113 +680,94 @@ function Schedule() {
                         {item.text}
                       </span>
                     );
-                  }
-                  if (isOff) {
-                    return (
-                      <span
-                        key={index}
-                        style={{
-                          ...tagStyle,
-                          color: '#0958d9',
-                          background: 'rgba(9,88,217,.1)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                        }}
-                        title={item.text}
-                      >
-                        {item.text}
-                      </span>
+                  })}
+                  {/* 日程用同款 Tag：与节日同一行，不单独占行，文字过长省略 */}
+                  {hasSchedules && (() => {
+                    const sorted = [...daySchedules].sort((a, b) => (b.priority || 0) - (a.priority || 0));
+                    const top = sorted[0];
+                    const count = daySchedules.length;
+                    const label = count === 1 ? (top.title || '未命名日程') : `${top.title || '日程'}+${count - 1}`;
+                    
+                    // 优先级颜色映射
+                    let scheduleTagBg = 'rgba(var(--accent-rgb, 22, 119, 255), 0.1)';
+                    let scheduleTagColor = 'var(--accent-primary, #1677ff)';
+                    let borderLeftColor = 'var(--accent-primary, #1677ff)';
+                    
+                    if ((top.priority || 0) === 3) {
+                      scheduleTagBg = 'rgba(255,77,79,.1)';
+                      scheduleTagColor = '#cf1322';
+                      borderLeftColor = '#ff4d4f';
+                    } else if ((top.priority || 0) === 2) {
+                      scheduleTagBg = 'rgba(250,173,20,.12)';
+                      scheduleTagColor = '#d48806';
+                      borderLeftColor = '#faad14';
+                    }
+                    
+                    const tooltipContent = (
+                      <div style={{ maxWidth: 320 }}>
+                        {sorted.map((schedule) => {
+                          const startTime = schedule.start_time ? dayjs(schedule.start_time).format('HH:mm') : '';
+                          const endTime = schedule.end_time ? dayjs(schedule.end_time).format('HH:mm') : '';
+                          const timeText = startTime && endTime ? `${startTime}-${endTime}` : startTime || '全天';
+                          return (
+                            <div key={schedule.id} style={{ marginBottom: 8 }}>
+                              <div style={{ fontWeight: 600, marginBottom: 2 }}>{schedule.title || '未命名日程'}</div>
+                              {timeText && <div style={{ fontSize: 12, color: '#666' }}><span style={{ color: '#999' }}>时间：</span>{timeText}</div>}
+                              {schedule.location && <div style={{ fontSize: 12, color: '#666' }}><span style={{ color: '#999' }}>地点：</span>{schedule.location}</div>}
+                            </div>
+                          );
+                        })}
+                      </div>
                     );
-                  }
-                  return (
+                    return (
+                      <Tooltip key="schedule-tag" title={tooltipContent} placement="topLeft">
+                        <span
+                          className={`schedule-tag-modern ${isMobile ? 'schedule-tag-compact' : ''}`}
+                          role="button"
+                          tabIndex={0}
+                          style={{
+                            fontSize: isMobile ? '9px' : '10px',
+                            lineHeight: isMobile ? '16px' : '18px',
+                            height: isMobile ? '16px' : '18px',
+                            padding: isMobile ? '0 5px 0 6px' : '0 6px 0 8px',
+                            borderRadius: isMobile ? '4px' : '6px',
+                            border: 'none',
+                            borderLeft: `${isMobile ? '2px' : '3px'} solid ${borderLeftColor}`,
+                            maxWidth: isMobile ? '55px' : '80px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            color: scheduleTagColor,
+                            background: scheduleTagBg,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                          }}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleEdit(top); } }}
+                          onClick={(e) => { e.stopPropagation(); handleEdit(top); }}
+                        >
+                          {label}
+                        </span>
+                      </Tooltip>
+                    );
+                  })()}
+                  {/* 更多按钮 */}
+                  {showMore && hiddenCount > 0 && (
                     <span
-                      key={index}
-                      style={{
-                        ...tagStyle,
-                        color: 'var(--calendar-text-secondary, #595959)',
-                        background: 'rgba(0,0,0,.05)',
-                        display: 'inline-flex',
-                        alignItems: 'center',
+                      className="calendar-more-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDayViewDate(date);
+                        setViewMode('day');
                       }}
-                      title={item.text}
                     >
-                      {item.text}
+                      +{hiddenCount}
                     </span>
-                  );
-                })}
-                {/* 日程用同款 Tag：与节日同一行，不单独占行，文字过长省略 */}
-                {daySchedules.length > 0 && (() => {
-                  const sorted = [...daySchedules].sort((a, b) => (b.priority || 0) - (a.priority || 0));
-                  const top = sorted[0];
-                  const count = daySchedules.length;
-                  const label = count === 1 ? (top.title || '未命名日程') : `${top.title || '未命名日程'} 等${count}项`;
-                  
-                  // 优先级颜色映射
-                  let scheduleTagBg = 'rgba(var(--accent-rgb, 22, 119, 255), 0.1)';
-                  let scheduleTagColor = 'var(--accent-primary, #1677ff)';
-                  let borderLeftColor = 'var(--accent-primary, #1677ff)';
-                  
-                  if ((top.priority || 0) === 3) {
-                    scheduleTagBg = 'rgba(255,77,79,.1)';
-                    scheduleTagColor = '#cf1322';
-                    borderLeftColor = '#ff4d4f';
-                  } else if ((top.priority || 0) === 2) {
-                    scheduleTagBg = 'rgba(250,173,20,.12)';
-                    scheduleTagColor = '#d48806';
-                    borderLeftColor = '#faad14';
-                  }
-                  
-                  const tooltipContent = (
-                    <div style={{ maxWidth: 320 }}>
-                      {sorted.map((schedule) => {
-                        const startTime = schedule.start_time ? dayjs(schedule.start_time).format('HH:mm') : '';
-                        const endTime = schedule.end_time ? dayjs(schedule.end_time).format('HH:mm') : '';
-                        const timeText = startTime && endTime ? `${startTime}-${endTime}` : startTime || '全天';
-                        return (
-                          <div key={schedule.id} style={{ marginBottom: 8 }}>
-                            <div style={{ fontWeight: 600, marginBottom: 2 }}>{schedule.title || '未命名日程'}</div>
-                            {timeText && <div style={{ fontSize: 12, color: '#666' }}><span style={{ color: '#999' }}>时间：</span>{timeText}</div>}
-                            {schedule.location && <div style={{ fontSize: 12, color: '#666' }}><span style={{ color: '#999' }}>地点：</span>{schedule.location}</div>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                  return (
-                    <Tooltip key="schedule-tag" title={tooltipContent} placement="topLeft">
-                      <span
-                        className="schedule-tag-modern"
-                        role="button"
-                        tabIndex={0}
-                        style={{
-                          fontSize: '10px',
-                          lineHeight: '18px',
-                          height: '18px',
-                          padding: '0 6px 0 8px',
-                          borderRadius: '6px',
-                          border: 'none',
-                          borderLeft: `3px solid ${borderLeftColor}`,
-                          maxWidth: '80px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          color: scheduleTagColor,
-                          background: scheduleTagBg,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                        }}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); handleEdit(top); } }}
-                        onClick={(e) => { e.stopPropagation(); handleEdit(top); }}
-                      >
-                        {label}
-                      </span>
-                    </Tooltip>
-                  );
-                })()}
-              </div>
-            )}
-          </div>
-        )}
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
     );
   };
@@ -755,26 +841,160 @@ function Schedule() {
                 </span>
               ),
               children: (
-                <>
-                  <div style={{ marginBottom: 16 }}>
-                    <Space wrap>
-                      {showLunar && (
-                        <Tag color="blue">已启用农历显示</Tag>
+                <div className={`calendar-view-container ${isFullscreen ? 'calendar-fullscreen' : ''}`}>
+                  {/* 日历工具栏 */}
+                  <div className="calendar-toolbar">
+                    <div className="calendar-toolbar-left">
+                      <Segmented
+                        size={isMobile ? 'small' : 'middle'}
+                        options={[
+                          { value: 'week', label: '周' },
+                          { value: 'month', label: '月' },
+                        ]}
+                        value={calendarMode}
+                        onChange={setCalendarMode}
+                      />
+                      {calendarMode === 'week' && (
+                        <Space size={4}>
+                          <Button 
+                            size={isMobile ? 'small' : 'middle'}
+                            icon={<LeftOutlined />} 
+                            onClick={() => handleWeekChange('prev')}
+                          />
+                          <Button 
+                            size={isMobile ? 'small' : 'middle'}
+                            onClick={handleGoToToday}
+                          >
+                            今天
+                          </Button>
+                          <Button 
+                            size={isMobile ? 'small' : 'middle'}
+                            icon={<RightOutlined />} 
+                            onClick={() => handleWeekChange('next')}
+                          />
+                        </Space>
                       )}
-                      {showHoliday && (
-                        <Tag color="red">已启用节假日显示</Tag>
-                      )}
-                    </Space>
+                    </div>
+                    <div className="calendar-toolbar-right">
+                      <Space size={8}>
+                        {!isMobile && showLunar && <Tag color="blue">农历</Tag>}
+                        {!isMobile && showHoliday && <Tag color="red">节假日</Tag>}
+                        <Tooltip title={isFullscreen ? '退出全屏 (ESC)' : '全屏查看'}>
+                          <Button
+                            type={isFullscreen ? 'primary' : 'default'}
+                            size={isMobile ? 'small' : 'middle'}
+                            icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+                            onClick={() => setIsFullscreen(!isFullscreen)}
+                          />
+                        </Tooltip>
+                      </Space>
+                    </div>
                   </div>
-                  <Calendar
-                    fullCellRender={fullCellRender}
-                    onSelect={(date) => {
-                      // 点击日期切换到日视图
-                      setDayViewDate(date.toDate());
-                      setSelectedDate(date.toDate());
-                    }}
-                  />
-                </>
+
+                  {/* 周视图 */}
+                  {calendarMode === 'week' && (
+                    <div className="week-view-container">
+                      <div className="week-view-header">
+                        <span className="week-view-title">
+                          {currentWeekStart.format('YYYY年M月')}
+                          <span className="week-view-range">
+                            {currentWeekStart.format('M/D')} - {currentWeekStart.add(6, 'day').format('M/D')}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="week-view-grid">
+                        {weekDays.map((day) => {
+                          const date = day.toDate();
+                          const dateKey = day.format('YYYY-MM-DD');
+                          const daySchedules = getSchedulesByDate(date);
+                          const dateInfo = calendarService.getDateInfo(date, { showLunar, showHoliday });
+                          const isToday = day.isSame(dayjs(), 'day');
+                          const isWeekend = day.day() === 0 || day.day() === 6;
+                          const restLabel = dateInfo.restLabel;
+                          
+                          // 节假日信息
+                          const tagItems = [];
+                          if (showHoliday && dateInfo.holidays?.length > 0) {
+                            dateInfo.holidays.forEach((h) => tagItems.push({ text: h.name, isOff: h.isOffDay }));
+                          }
+                          
+                          return (
+                            <div
+                              key={dateKey}
+                              className={`week-day-cell ${isToday ? 'is-today' : ''} ${isWeekend ? 'is-weekend' : ''}`}
+                              onClick={() => {
+                                setDayViewDate(date);
+                                setViewMode('day');
+                              }}
+                            >
+                              {/* 日期头部 */}
+                              <div className="week-day-header">
+                                <div className="week-day-name">{['日', '一', '二', '三', '四', '五', '六'][day.day()]}</div>
+                                <div className={`week-day-num ${isToday ? 'today' : ''}`}>
+                                  {day.date()}
+                                  {restLabel && (
+                                    <span className={`week-rest-label ${restLabel === '休' ? 'off' : 'work'}`}>
+                                      {restLabel}
+                                    </span>
+                                  )}
+                                </div>
+                                {showLunar && dateInfo.lunar && (
+                                  <div className="week-day-lunar">{dateInfo.lunar.simpleText}</div>
+                                )}
+                              </div>
+                              
+                              {/* 日程内容 */}
+                              <div className="week-day-content">
+                                {tagItems.slice(0, 2).map((item, idx) => (
+                                  <div key={idx} className={`week-holiday-tag ${item.isOff ? 'off' : ''}`}>
+                                    {item.text}
+                                  </div>
+                                ))}
+                                {daySchedules.slice(0, isFullscreen ? 4 : 3).map((schedule) => (
+                                  <div
+                                    key={schedule.id}
+                                    className={`week-schedule-item priority-${schedule.priority || 0}`}
+                                    onClick={(e) => { e.stopPropagation(); handleEdit(schedule); }}
+                                  >
+                                    {schedule.start_time && (
+                                      <span className="week-schedule-time">
+                                        {dayjs(schedule.start_time).format('HH:mm')}
+                                      </span>
+                                    )}
+                                    <span className="week-schedule-title">{schedule.title}</span>
+                                  </div>
+                                ))}
+                                {daySchedules.length > (isFullscreen ? 4 : 3) && (
+                                  <div className="week-more-btn">
+                                    +{daySchedules.length - (isFullscreen ? 4 : 3)} 项
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 月视图 */}
+                  {calendarMode === 'month' && (
+                    <Calendar
+                      fullCellRender={fullCellRender}
+                      onSelect={(date) => {
+                        setDayViewDate(date.toDate());
+                        setSelectedDate(date.toDate());
+                      }}
+                    />
+                  )}
+
+                  {/* 全屏关闭提示 */}
+                  {isFullscreen && (
+                    <div className="fullscreen-hint">
+                      按 ESC 退出全屏
+                    </div>
+                  )}
+                </div>
               ),
             },
             {

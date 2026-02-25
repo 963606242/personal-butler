@@ -5,6 +5,9 @@ import 'dayjs/locale/en';
 import zhCN from '../i18n/locales/zh-CN.json';
 import enUS from '../i18n/locales/en-US.json';
 import useSettingsStore from '../stores/settingsStore';
+import { getLogger } from '../services/logger-client';
+
+const logger = getLogger();
 
 const I18nContext = createContext({
   locale: 'zh-CN',
@@ -79,7 +82,7 @@ export function I18nProvider({ children }) {
         await set('language', normalized);
       } catch (e) {
         // 语言切换失败不阻塞前端展示
-        console.error('保存语言设置失败', e);
+        logger.error('I18n', '保存语言设置失败', e);
       }
     },
     [set]

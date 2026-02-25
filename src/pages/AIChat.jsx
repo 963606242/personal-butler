@@ -24,6 +24,7 @@ import {
   CalendarOutlined,
   CheckCircleOutlined,
   ThunderboltOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons';
 import ReactMarkdown from 'react-markdown';
 import { chat, getActiveProvider, isAIConfigured } from '../services/ai-providers';
@@ -33,6 +34,7 @@ import useUserStore from '../stores/userStore';
 import { DATA_CARRY_OPTIONS, gatherDataForChat } from '../services/ai-chat-data';
 import { buildStructuredDailyPlanMessages, parseDailyPlanJson } from '../services/ai-daily-plan';
 import { getAssistantName } from '../utils/assistant-name';
+import { useI18n } from '../context/I18nContext';
 import SaveAsScheduleModal from '../components/AI/SaveAsScheduleModal';
 import SaveAsHabitModal from '../components/AI/SaveAsHabitModal';
 import BatchSaveScheduleModal from '../components/AI/BatchSaveScheduleModal';
@@ -66,12 +68,14 @@ function parseFirstLine(t) {
 export default function AIChat() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useI18n();
   const { currentUser, isInitialized } = useUserStore();
   const { messages, loadMessages, appendMessage, clearMessages, loading: loadingHistory } = useAiChatStore();
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [carryData, setCarryData] = useState(loadCarryFromStorage);
   const [planLoading, setPlanLoading] = useState(false);
+  const [lastFailedHistory, setLastFailedHistory] = useState(null);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [habitModalOpen, setHabitModalOpen] = useState(false);
   const [batchScheduleOpen, setBatchScheduleOpen] = useState(false);
@@ -123,7 +127,7 @@ export default function AIChat() {
         userContent = `【以下为我携带的数据】\n\n${context}\n\n【我的问题】\n${text}`;
       } catch (e) {
         logger.error('AIChat', '携带数据聚合失败', e);
-        message.warning('携带数据加载失败，已仅发送问题');
+        message.warning(t('aiChat.messages.carryDataFailed', '携带数据加载失败，已仅发送问题'));
       }
     }
 
@@ -133,7 +137,7 @@ export default function AIChat() {
       await appendMessage('user', userContent);
     } catch (e) {
       logger.error('AIChat', '保存消息失败', e);
-      message.error(e?.message || '保存失败，请重试');
+      message.error(e?.message || t('aiChat.messages.saveFailed', '保存失败，请重试'));
       setInput(text);
       setLoading(false);
       return;
@@ -142,9 +146,11 @@ export default function AIChat() {
       const history = [...messages, userMsg].map((m) => ({ role: m.role, content: m.content }));
       const reply = await chat(history);
       await appendMessage('assistant', reply);
+      setLastFailedHistory(null);
     } catch (e) {
       logger.error('AIChat', '发送失败', e);
-      message.error(e?.message || '发送失败，请重试');
+      message.error(e?.message || t('aiChat.messages.sendFailed', '发送失败，请重试'));
+      setLastFailedHistory([...messages, userMsg].map((m) => ({ role: m.role, content: m.content })));
     } finally {
       setLoading(false);
     }
@@ -153,9 +159,25 @@ export default function AIChat() {
   const handleClear = async () => {
     try {
       await clearMessages();
-      message.success('已清空聊天记录');
+      setLastFailedHistory(null);
+      message.success(t('aiChat.messages.cleared', '已清空聊天记录'));
     } catch (e) {
-      message.error('清空失败');
+      message.error(t('aiChat.messages.clearFailed', '清空失败'));
+    }
+  };
+
+  const handleRetry = async () => {
+    if (!lastFailedHistory || loading) return;
+    setLoading(true);
+    try {
+      const reply = await chat(lastFailedHistory);
+      await appendMessage('assistant', reply);
+      setLastFailedHistory(null);
+    } catch (e) {
+      logger.error('AIChat', '重试失败', e);
+      message.error(e?.message || t('aiChat.messages.retryFailed', '重试失败，请稍后再试'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -166,11 +188,14 @@ export default function AIChat() {
     try {
       await appendMessage('user', userContent);
       const [sys] = buildStructuredDailyPlanMessages();
-      const reply = await chat([sys, { role: 'user', content: userContent }]);
+      const planHistory = [sys, { role: 'user', content: userContent }];
+      const reply = await chat(planHistory);
       await appendMessage('assistant', reply);
+      setLastFailedHistory(null);
     } catch (e) {
       logger.error('AIChat', '生成每日计划失败', e);
-      message.error(e?.message || '生成失败，请重试');
+      message.error(e?.message || t('aiChat.messages.generateFailed', '生成失败，请重试'));
+      setLastFailedHistory([{ role: 'user', content: userContent }]);
     } finally {
       setPlanLoading(false);
     }
@@ -321,6 +346,13 @@ export default function AIChat() {
           )}
         />
         <div ref={listRef} />
+        {lastFailedHistory && !loading && (
+          <div style={{ textAlign: 'center', padding: '8px 0' }}>
+            <Button icon={<ReloadOutlined />} onClick={handleRetry} style={{ borderRadius: 10 }}>
+              重新发送
+            </Button>
+          </div>
+        )}
         <Collapse
           className="ai-carry-collapse"
           size="small"
@@ -389,7 +421,7 @@ export default function AIChat() {
         initialNotes={lastAssistantText}
         onSuccess={() => {
           setScheduleModalOpen(false);
-          message.success('已保存为日程');
+          message.success(t('aiChat.messages.savedAsSchedule', '已保存为日程'));
         }}
         onCancel={() => setScheduleModalOpen(false)}
       />
@@ -398,7 +430,7 @@ export default function AIChat() {
         initialName={parseFirstLine(lastAssistantText) || 'AI 建议习惯'}
         onSuccess={() => {
           setHabitModalOpen(false);
-          message.success('已保存为习惯');
+          message.success(t('aiChat.messages.savedAsHabit', '已保存为习惯'));
         }}
         onCancel={() => setHabitModalOpen(false)}
       />

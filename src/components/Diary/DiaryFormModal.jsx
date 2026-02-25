@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { App, Modal, Form, Input, DatePicker, Button, Space, Tag, Select, Typography, theme } from 'antd';
 import { PictureOutlined, SoundOutlined, VideoCameraOutlined, DeleteOutlined, StopOutlined, RobotOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -7,6 +7,7 @@ import { selectMediaFile, startAudioRecording, stopAudioRecording, cancelAudioRe
 import { getLogger } from '../../services/logger-client';
 import { analyzeImageForDiary } from '../../services/ai-providers';
 import { getConfigStr } from '../../services/config';
+import { useI18n } from '../../context/I18nContext';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -23,6 +24,7 @@ const MOOD_OPTIONS = [
 
 function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) {
   const { message } = App.useApp();
+  const { t } = useI18n();
   const [form] = Form.useForm();
   const [images, setImages] = useState([]);
   const [audioPath, setAudioPath] = useState(null);
@@ -79,7 +81,7 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
       }
     } catch (error) {
       logger.error('DiaryFormModal', '选择图片失败', error);
-      message.error('选择图片失败');
+      message.error(t('diaryForm.selectImageFailed', '选择图片失败'));
     }
   };
 
@@ -89,11 +91,11 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
       const filePath = result && (typeof result === 'string' ? result : result.filePath);
       if (filePath) {
         setVideoPath(filePath);
-        message.success('视频已选择');
+        message.success(t('diaryForm.videoSelected', '视频已选择'));
       }
     } catch (error) {
       logger.error('DiaryFormModal', '选择视频失败', error);
-      message.error('选择视频失败');
+      message.error(t('diaryForm.selectVideoFailed', '选择视频失败'));
     }
   };
 
@@ -102,13 +104,13 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
       const result = await startAudioRecording();
       if (result.success) {
         setIsRecording(true);
-        message.success('开始录音');
+        message.success(t('diaryForm.recordingStarted', '开始录音'));
       } else {
-        message.error(result.error || '录音失败');
+        message.error(result.error || t('diaryForm.recordingFailed', '录音失败'));
       }
     } catch (error) {
       logger.error('DiaryFormModal', '开始录音失败', error);
-      message.error('录音失败');
+      message.error(t('diaryForm.recordingFailed', '录音失败'));
     }
   };
 
@@ -118,14 +120,14 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
       if (result.success && result.filePath) {
         setAudioPath(result.filePath);
         setIsRecording(false);
-        message.success('录音完成');
+        message.success(t('diaryForm.recordingComplete', '录音完成'));
       } else {
-        message.error(result.error || '录音失败');
+        message.error(result.error || t('diaryForm.recordingFailed', '录音失败'));
         setIsRecording(false);
       }
     } catch (error) {
       logger.error('DiaryFormModal', '停止录音失败', error);
-      message.error('录音失败');
+      message.error(t('diaryForm.recordingFailed', '录音失败'));
       setIsRecording(false);
     }
   };
@@ -133,7 +135,7 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
   const handleCancelRecording = async () => {
     await cancelAudioRecording();
     setIsRecording(false);
-    message.info('已取消录音');
+    message.info(t('diaryForm.recordingCanceled', '已取消录音'));
   };
 
   const imageUrlToBase64 = (url) => {
@@ -160,7 +162,7 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
 
   const handleAnalyzeImages = async () => {
     if (images.length === 0) {
-      message.warning('请先添加图片');
+      message.warning(t('diaryForm.pleaseAddImage', '请先添加图片'));
       return;
     }
     setAnalyzingImages(true);
@@ -172,10 +174,10 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
         lines.push(`图${i + 1}：${text}`);
       }
       setImageAnalysis(lines.join('\n'));
-      message.success('图片分析已保存，可用于搜索');
+      message.success(t('diaryForm.imageAnalysisSaved', '图片分析已保存，可用于搜索'));
     } catch (error) {
       logger.error('DiaryFormModal', '图片分析失败', error);
-      message.error(error?.message || '图片分析失败');
+      message.error(error?.message || t('diaryForm.imageAnalysisFailed', '图片分析失败'));
     } finally {
       setAnalyzingImages(false);
     }
@@ -183,16 +185,16 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
 
   const handleTranscribeAudio = async () => {
     if (!audioPath) {
-      message.warning('请先录制或选择录音');
+      message.warning(t('diaryForm.pleaseRecordAudio', '请先录制或选择录音'));
       return;
     }
     if (!isElectron() || !window.electronAPI?.transcribeAudio) {
-      message.warning('录音转写当前仅支持 Electron 环境，且需配置 OpenAI API Key');
+      message.warning(t('diaryForm.transcribeElectronOnly', '录音转写当前仅支持 Electron 环境，且需配置 OpenAI API Key'));
       return;
     }
     const apiKey = getConfigStr('openai_api_key');
     if (!apiKey) {
-      message.warning('请先在设置中配置 OpenAI API Key');
+      message.warning(t('diaryForm.pleaseConfigureApiKey', '请先在设置中配置 OpenAI API Key'));
       return;
     }
     setTranscribing(true);
@@ -211,13 +213,13 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
       const result = await window.electronAPI.transcribeAudio({ base64, apiKey });
       if (result.success && result.text) {
         setAudioTranscript(result.text);
-        message.success('转写已保存，可用于搜索');
+        message.success(t('diaryForm.transcribeSaved', '转写已保存，可用于搜索'));
       } else {
-        message.error(result.error || '转写失败');
+        message.error(result.error || t('diaryForm.transcribeFailed', '转写失败'));
       }
     } catch (error) {
       logger.error('DiaryFormModal', '转写失败', error);
-      message.error(error?.message || '转写失败');
+      message.error(error?.message || t('diaryForm.transcribeFailed', '转写失败'));
     } finally {
       setTranscribing(false);
     }
@@ -254,15 +256,15 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
 
       if (editingEntry) {
         await updateEntry(editingEntry.id, data);
-        message.success('更新成功');
+        message.success(t('diaryForm.updateSuccess', '更新成功'));
       } else {
         await createEntry(data);
-        message.success('创建成功');
+        message.success(t('diaryForm.createSuccess', '创建成功'));
       }
       onOk();
     } catch (error) {
       logger.error('DiaryFormModal', '保存失败', error);
-      message.error('保存失败');
+      message.error(t('diaryForm.saveFailed', '保存失败'));
     }
   };
 
@@ -412,4 +414,4 @@ function DiaryFormModal({ visible, editingEntry, initialDate, onCancel, onOk }) 
   );
 }
 
-export default DiaryFormModal;
+export default memo(DiaryFormModal);

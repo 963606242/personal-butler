@@ -80,7 +80,7 @@ async function ensureCredentials() {
 }
 
 /** 导出本地数据（Electron 走 IPC，Web/iOS 走 sql.js+IndexedDB） */
-async function exportData() {
+export async function exportData() {
   if (isElectron()) return syncExportData();
   await getDatabase();
   const payload = webDb.exportForSync();
@@ -88,7 +88,7 @@ async function exportData() {
 }
 
 /** 导入到本地（Electron 走 IPC，Web/iOS 走 sql.js+IndexedDB） */
-async function importData(payload) {
+export async function importData(payload) {
   if (isElectron()) return syncImportData(payload);
   await getDatabase();
   await webDb.importFromSync(payload);

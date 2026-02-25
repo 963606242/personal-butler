@@ -20,6 +20,10 @@ import { UserOutlined, IdcardOutlined, HeartOutlined } from '@ant-design/icons';
 import useUserStore from '../stores/userStore';
 import dayjs from 'dayjs';
 import { getZodiacFromBirthday } from '../utils/zodiac';
+import { getLogger } from '../services/logger-client';
+import { useI18n } from '../context/I18nContext';
+
+const logger = getLogger();
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -31,13 +35,14 @@ const MBTI_OPTIONS = [
 
 function Profile() {
   const [form] = Form.useForm();
+  const { t } = useI18n();
   const { userProfile, loadUser, updateProfile, isInitialized } = useUserStore();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadUser().catch((error) => {
-      console.error('加载用户信息失败:', error);
-      message.error('加载用户信息失败: ' + error.message);
+      logger.error('Profile', '加载用户信息失败:', error);
+      message.error(t('profile.messages.loadFailed', '加载用户信息失败') + ': ' + error.message);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -72,7 +77,7 @@ function Profile() {
             commuteTime: workSchedule.commuteTime || undefined,
           });
         } catch (error) {
-          console.error('解析工作信息失败:', error);
+          logger.error('Profile', '解析工作信息失败:', error);
         }
       }
 
@@ -91,8 +96,8 @@ function Profile() {
   const handleSubmit = async (values, tabKey) => {
     setLoading(true);
     try {
-      console.log('[Profile] 表单提交 - Tab:', tabKey);
-      console.log('[Profile] 表单值:', values);
+      logger.debug('Profile', '表单提交 - Tab:', tabKey);
+      logger.debug('Profile', '表单值:', values);
       
       let profileData = {};
 
@@ -106,8 +111,8 @@ function Profile() {
           birthday: values.birthday ? values.birthday.startOf('day').valueOf() : null,
           mbti: values.mbti || null,
         };
-        console.log('[Profile] 基础信息数据:', profileData);
-        console.log('[Profile] 原始表单值:', values);
+        logger.debug('Profile', '基础信息数据:', profileData);
+        logger.debug('Profile', '原始表单值:', values);
       } else if (tabKey === 'work') {
         // 工作信息
         profileData = {
@@ -124,7 +129,7 @@ function Profile() {
             commuteTime: values.commuteTime !== undefined && values.commuteTime !== null ? values.commuteTime : null,
           },
         };
-        console.log('[Profile] 工作信息数据:', profileData);
+        logger.debug('Profile', '工作信息数据:', profileData);
       } else if (tabKey === 'interests') {
         // 兴趣爱好
         profileData = {
@@ -135,15 +140,15 @@ function Profile() {
             other: values.otherInterests || null,
           },
         };
-        console.log('[Profile] 兴趣爱好数据:', profileData);
+        logger.debug('Profile', '兴趣爱好数据:', profileData);
       }
 
-      console.log('[Profile] 准备更新的数据:', profileData);
+      logger.debug('Profile', '准备更新的数据:', profileData);
       await updateProfile(profileData);
-      message.success('个人信息更新成功');
+      message.success(t('profile.messages.updateSuccess', '个人信息更新成功'));
     } catch (error) {
-      console.error('[Profile] 更新失败:', error);
-      message.error('更新失败: ' + error.message);
+      logger.error('Profile', '更新失败:', error);
+      message.error(t('profile.messages.updateFailed', '更新失败') + ': ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -194,8 +199,8 @@ function Profile() {
                     className="profile-form"
                     onFinish={(values) => handleSubmit(values, 'basic')}
                     onFinishFailed={(errorInfo) => {
-                      console.error('[Profile] 表单验证失败:', errorInfo);
-                      message.error('请检查表单填写是否正确');
+                      logger.error('Profile', '表单验证失败:', errorInfo);
+                      message.error(t('profile.messages.formInvalid', '请检查表单填写是否正确'));
                     }}
                   >
                     <Row gutter={16}>
@@ -352,7 +357,7 @@ function Profile() {
                   className="profile-form"
                   onFinish={(values) => handleSubmit(values, 'work')}
                   onFinishFailed={(errorInfo) => {
-                    console.error('[Profile] 表单验证失败:', errorInfo);
+                    logger.error('Profile', '表单验证失败:', errorInfo);
                     message.error('请检查表单填写是否正确');
                   }}
                 >
@@ -482,7 +487,7 @@ function Profile() {
                   className="profile-form profile-interests"
                   onFinish={(values) => handleSubmit(values, 'interests')}
                   onFinishFailed={(errorInfo) => {
-                    console.error('[Profile] 表单验证失败:', errorInfo);
+                    logger.error('Profile', '表单验证失败:', errorInfo);
                     message.error('请检查表单填写是否正确');
                   }}
                 >

@@ -62,8 +62,8 @@ const useEquipmentStore = create((set, get) => ({
     const id = getCryptoService().generateUUID();
     const now = Date.now();
     await db.execute(
-      `INSERT INTO equipment (id, user_id, name, category, brand, model, purchase_date, price, status, image_path, notes, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO equipment (id, user_id, name, category, brand, model, purchase_date, price, status, image_path, notes, maintenance_interval, last_maintained, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id,
         currentUser.id,
@@ -76,6 +76,8 @@ const useEquipmentStore = create((set, get) => ({
         data.status || 'normal',
         data.image_path || null,
         data.notes || null,
+        data.maintenance_interval || null,
+        data.last_maintained ? dayjs(data.last_maintained).valueOf() : null,
         now,
         now,
       ]
@@ -90,7 +92,7 @@ const useEquipmentStore = create((set, get) => ({
     if (!currentUser) throw new Error('用户未登录');
     const now = Date.now();
     await db.execute(
-      `UPDATE equipment SET name = ?, category = ?, brand = ?, model = ?, purchase_date = ?, price = ?, status = ?, image_path = ?, notes = ?, updated_at = ?
+      `UPDATE equipment SET name = ?, category = ?, brand = ?, model = ?, purchase_date = ?, price = ?, status = ?, image_path = ?, notes = ?, maintenance_interval = ?, last_maintained = ?, updated_at = ?
        WHERE id = ? AND user_id = ?`,
       [
         data.name ?? '',
@@ -102,12 +104,38 @@ const useEquipmentStore = create((set, get) => ({
         data.status ?? 'normal',
         data.image_path ?? null,
         data.notes ?? null,
+        data.maintenance_interval ?? null,
+        data.last_maintained ? dayjs(data.last_maintained).valueOf() : null,
         now,
         id,
         currentUser.id,
       ]
     );
     await get().loadEquipment();
+  },
+
+  async markMaintained(id) {
+    const db = await getDatabase();
+    const { currentUser } = useUserStore.getState();
+    if (!currentUser) throw new Error('用户未登录');
+    const now = Date.now();
+    await db.execute(
+      'UPDATE equipment SET last_maintained = ?, updated_at = ? WHERE id = ? AND user_id = ?',
+      [now, now, id, currentUser.id]
+    );
+    await get().loadEquipment();
+  },
+
+  getMaintenanceDueItems() {
+    const now = Date.now();
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    return get().equipment.filter((item) => {
+      if (!item.maintenance_interval || item.maintenance_interval <= 0) return false;
+      if (item.status === 'broken') return false;
+      const lastTime = item.last_maintained || item.created_at || 0;
+      const nextDue = lastTime + item.maintenance_interval * DAY_MS;
+      return now >= nextDue;
+    });
   },
 
   async deleteEquipment(id) {

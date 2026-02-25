@@ -11,7 +11,9 @@
 import { fetchJson } from './fetch-json';
 import { getConfigStr } from './config';
 
-const logger = console;
+import { getLogger } from './logger-client';
+
+const logger = getLogger();
 
 function getTianKey() {
   return getConfigStr('tianapi_key') || (import.meta.env.VITE_TIANAPI_KEY ?? '');
@@ -77,7 +79,7 @@ function newsDebugLog(msg, detail) {
       s = ' [无法序列化]';
     }
   }
-  console.log(`[NewsAPI 调试] ${msg}${s}`);
+  logger.debug('NewsAPICN', `调试: ${msg}${s}`);
 }
 
 /**

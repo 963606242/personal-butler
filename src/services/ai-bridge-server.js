@@ -4,7 +4,9 @@
  */
 const http = require('http');
 const { randomUUID } = require('crypto');
+const Logger = require('./logger');
 
+const logger = new Logger();
 const DEFAULT_PORT = 3847;
 const PREFIX = '/api/v1';
 
@@ -168,6 +170,75 @@ function createServer(db) {
         return;
       }
 
+      // POST /api/v1/habits
+      if (path === `${PREFIX}/habits` && method === 'POST') {
+        const body = await parseBody(req);
+        const name = (body.name || '').trim();
+        if (!name) {
+          send(res, 400, { error: 'name is required.' });
+          return;
+        }
+        const habitId = randomUUID();
+        const now = Date.now();
+        const frequency = body.frequency || 'daily';
+        const reminderTime = body.reminder_time || null;
+        const targetDays = body.target_days && Array.isArray(body.target_days) ? JSON.stringify(body.target_days) : (body.target_days || null);
+        const period = body.period || null;
+        const sortOrder = body.sort_order != null ? body.sort_order : 0;
+        db.execute(
+          `INSERT INTO habits (id, user_id, name, frequency, reminder_time, target_days, period, sort_order, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [habitId, userId, name, frequency, reminderTime, targetDays, period, sortOrder, now]
+        );
+        send(res, 200, { id: habitId, name, frequency });
+        return;
+      }
+
+      // PUT /api/v1/habits/:id
+      const habitUpdateMatch = path.match(new RegExp(`^${PREFIX}/habits/([^/]+)$`));
+      if (habitUpdateMatch && method === 'PUT') {
+        const habitId = habitUpdateMatch[1];
+        const existing = db.query('SELECT id FROM habits WHERE id = ? AND user_id = ?', [habitId, userId]);
+        if (!existing || existing.length === 0) {
+          send(res, 404, { error: 'Habit not found.' });
+          return;
+        }
+        const body = await parseBody(req);
+        const fields = [];
+        const params = [];
+        if (body.name != null) { fields.push('name = ?'); params.push(body.name); }
+        if (body.frequency != null) { fields.push('frequency = ?'); params.push(body.frequency); }
+        if (body.reminder_time !== undefined) { fields.push('reminder_time = ?'); params.push(body.reminder_time || null); }
+        if (body.target_days !== undefined) {
+          fields.push('target_days = ?');
+          params.push(body.target_days && Array.isArray(body.target_days) ? JSON.stringify(body.target_days) : (body.target_days || null));
+        }
+        if (body.period !== undefined) { fields.push('period = ?'); params.push(body.period || null); }
+        if (body.sort_order != null) { fields.push('sort_order = ?'); params.push(body.sort_order); }
+        if (fields.length === 0) {
+          send(res, 400, { error: 'No fields to update.' });
+          return;
+        }
+        params.push(habitId); params.push(userId);
+        db.execute(`UPDATE habits SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`, params);
+        send(res, 200, { id: habitId, updated: true });
+        return;
+      }
+
+      // DELETE /api/v1/habits/:id
+      if (habitUpdateMatch && method === 'DELETE') {
+        const habitId = habitUpdateMatch[1];
+        const existing = db.query('SELECT id FROM habits WHERE id = ? AND user_id = ?', [habitId, userId]);
+        if (!existing || existing.length === 0) {
+          send(res, 404, { error: 'Habit not found.' });
+          return;
+        }
+        db.execute('DELETE FROM habit_logs WHERE habit_id = ? AND user_id = ?', [habitId, userId]);
+        db.execute('DELETE FROM habits WHERE id = ? AND user_id = ?', [habitId, userId]);
+        send(res, 200, { id: habitId, deleted: true });
+        return;
+      }
+
       // GET /api/v1/schedule?from=ts&to=ts (timestamps in ms)
       if (path === `${PREFIX}/schedule` && method === 'GET') {
         const from = parseInt(url.searchParams.get('from'), 10) || 0;
@@ -202,6 +273,56 @@ function createServer(db) {
         return;
       }
 
+      // PUT /api/v1/schedule/:id
+      const scheduleUpdateMatch = path.match(new RegExp(`^${PREFIX}/schedule/([^/]+)$`));
+      if (scheduleUpdateMatch && method === 'PUT') {
+        const scheduleId = scheduleUpdateMatch[1];
+        const existing = db.query('SELECT id FROM schedules WHERE id = ? AND user_id = ?', [scheduleId, userId]);
+        if (!existing || existing.length === 0) {
+          send(res, 404, { error: 'Schedule not found.' });
+          return;
+        }
+        const body = await parseBody(req);
+        const fields = [];
+        const params = [];
+        if (body.title != null) { fields.push('title = ?'); params.push(body.title); }
+        if (body.start_time != null) {
+          const st = typeof body.start_time === 'number' ? body.start_time : new Date(body.start_time).getTime();
+          fields.push('start_time = ?'); params.push(st);
+          fields.push('date = ?'); params.push(startOfDayMs(st));
+        }
+        if (body.end_time != null) {
+          const et = typeof body.end_time === 'number' ? body.end_time : new Date(body.end_time).getTime();
+          fields.push('end_time = ?'); params.push(et);
+        }
+        if (body.location !== undefined) { fields.push('location = ?'); params.push(body.location || null); }
+        if (body.notes !== undefined) { fields.push('notes = ?'); params.push(body.notes || null); }
+        if (body.priority != null) { fields.push('priority = ?'); params.push(body.priority); }
+        if (body.tags !== undefined) { fields.push('tags = ?'); params.push(body.tags && Array.isArray(body.tags) ? JSON.stringify(body.tags) : null); }
+        if (fields.length === 0) {
+          send(res, 400, { error: 'No fields to update.' });
+          return;
+        }
+        fields.push('updated_at = ?'); params.push(Date.now());
+        params.push(scheduleId); params.push(userId);
+        db.execute(`UPDATE schedules SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`, params);
+        send(res, 200, { id: scheduleId, updated: true });
+        return;
+      }
+
+      // DELETE /api/v1/schedule/:id
+      if (scheduleUpdateMatch && method === 'DELETE') {
+        const scheduleId = scheduleUpdateMatch[1];
+        const existing = db.query('SELECT id FROM schedules WHERE id = ? AND user_id = ?', [scheduleId, userId]);
+        if (!existing || existing.length === 0) {
+          send(res, 404, { error: 'Schedule not found.' });
+          return;
+        }
+        db.execute('DELETE FROM schedules WHERE id = ? AND user_id = ?', [scheduleId, userId]);
+        send(res, 200, { id: scheduleId, deleted: true });
+        return;
+      }
+
       // GET /api/v1/countdown/events
       if (path === `${PREFIX}/countdown/events` && method === 'GET') {
         const rows = db.query(
@@ -209,6 +330,83 @@ function createServer(db) {
           [userId]
         );
         send(res, 200, { events: rows });
+        return;
+      }
+
+      // POST /api/v1/countdown/events
+      if (path === `${PREFIX}/countdown/events` && method === 'POST') {
+        const body = await parseBody(req);
+        const type = (body.type || '').trim();
+        const title = (body.title || '').trim();
+        if (!type || !title) {
+          send(res, 400, { error: 'type and title are required.' });
+          return;
+        }
+        const targetDate = body.target_date != null ? (typeof body.target_date === 'number' ? body.target_date : new Date(body.target_date).getTime()) : null;
+        if (!targetDate || Number.isNaN(targetDate)) {
+          send(res, 400, { error: 'Valid target_date is required.' });
+          return;
+        }
+        const eventId = randomUUID();
+        const now = Date.now();
+        const isAnnual = body.is_annual ? 1 : 0;
+        const reminderDaysBefore = body.reminder_days_before != null ? body.reminder_days_before : 0;
+        const repeatInterval = body.repeat_interval != null ? body.repeat_interval : 0;
+        const repeatUnit = body.repeat_unit || null;
+        const notes = body.notes || null;
+        db.execute(
+          `INSERT INTO countdown_events (id, user_id, type, title, target_date, is_annual, reminder_days_before, repeat_interval, repeat_unit, notes, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [eventId, userId, type, title, targetDate, isAnnual, reminderDaysBefore, repeatInterval, repeatUnit, notes, now, now]
+        );
+        send(res, 200, { id: eventId, type, title, target_date: targetDate });
+        return;
+      }
+
+      // PUT /api/v1/countdown/events/:id
+      const countdownUpdateMatch = path.match(new RegExp(`^${PREFIX}/countdown/events/([^/]+)$`));
+      if (countdownUpdateMatch && method === 'PUT') {
+        const eventId = countdownUpdateMatch[1];
+        const existing = db.query('SELECT id FROM countdown_events WHERE id = ? AND user_id = ?', [eventId, userId]);
+        if (!existing || existing.length === 0) {
+          send(res, 404, { error: 'Countdown event not found.' });
+          return;
+        }
+        const body = await parseBody(req);
+        const fields = [];
+        const params = [];
+        if (body.type != null) { fields.push('type = ?'); params.push(body.type); }
+        if (body.title != null) { fields.push('title = ?'); params.push(body.title); }
+        if (body.target_date != null) {
+          const td = typeof body.target_date === 'number' ? body.target_date : new Date(body.target_date).getTime();
+          fields.push('target_date = ?'); params.push(td);
+        }
+        if (body.is_annual != null) { fields.push('is_annual = ?'); params.push(body.is_annual ? 1 : 0); }
+        if (body.reminder_days_before != null) { fields.push('reminder_days_before = ?'); params.push(body.reminder_days_before); }
+        if (body.repeat_interval != null) { fields.push('repeat_interval = ?'); params.push(body.repeat_interval); }
+        if (body.repeat_unit !== undefined) { fields.push('repeat_unit = ?'); params.push(body.repeat_unit || null); }
+        if (body.notes !== undefined) { fields.push('notes = ?'); params.push(body.notes || null); }
+        if (fields.length === 0) {
+          send(res, 400, { error: 'No fields to update.' });
+          return;
+        }
+        fields.push('updated_at = ?'); params.push(Date.now());
+        params.push(eventId); params.push(userId);
+        db.execute(`UPDATE countdown_events SET ${fields.join(', ')} WHERE id = ? AND user_id = ?`, params);
+        send(res, 200, { id: eventId, updated: true });
+        return;
+      }
+
+      // DELETE /api/v1/countdown/events/:id
+      if (countdownUpdateMatch && method === 'DELETE') {
+        const eventId = countdownUpdateMatch[1];
+        const existing = db.query('SELECT id FROM countdown_events WHERE id = ? AND user_id = ?', [eventId, userId]);
+        if (!existing || existing.length === 0) {
+          send(res, 404, { error: 'Countdown event not found.' });
+          return;
+        }
+        db.execute('DELETE FROM countdown_events WHERE id = ? AND user_id = ?', [eventId, userId]);
+        send(res, 200, { id: eventId, deleted: true });
         return;
       }
 
@@ -308,7 +506,7 @@ function createServer(db) {
 
       send(res, 404, { error: 'Not found', path });
     } catch (err) {
-      console.error('[AI-Bridge]', err);
+      logger.error('AIBridge', 'Request error:', err);
       send(res, 500, { error: err.message || 'Internal server error' });
     }
   }
@@ -320,7 +518,7 @@ function createServer(db) {
       const actualPort = port != null ? port : p;
       const enabled = (settings.api_bridge_enabled || '').toLowerCase();
       if (enabled !== '1' && enabled !== 'true') {
-        console.log('[AI-Bridge] Disabled in settings, not starting.');
+        logger.log('AIBridge', 'Disabled in settings, not starting.');
         return null;
       }
       if (server) {
@@ -329,10 +527,10 @@ function createServer(db) {
       }
       server = http.createServer(handle);
       server.listen(actualPort, '127.0.0.1', () => {
-        console.log('[AI-Bridge] Listening on http://127.0.0.1:' + actualPort);
+        logger.log('AIBridge', 'Listening on http://127.0.0.1:' + actualPort);
       });
       server.on('error', (err) => {
-        console.error('[AI-Bridge] Server error:', err.message);
+        logger.error('AIBridge', 'Server error:', err.message);
       });
       return server;
     },
@@ -340,7 +538,7 @@ function createServer(db) {
       if (server) {
         try { server.close(); } catch (_) {}
         server = null;
-        console.log('[AI-Bridge] Stopped.');
+        logger.log('AIBridge', 'Stopped.');
       }
     },
   };

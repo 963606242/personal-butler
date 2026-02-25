@@ -9,6 +9,37 @@ import { isElectron, fetchJsonPost as platformFetchJsonPost } from '../platform'
 const OPENAI_OFFICIAL = 'https://api.openai.com/v1';
 const ANTHROPIC_OFFICIAL = 'https://api.anthropic.com/v1';
 
+const MAX_RETRIES = 2;
+const BASE_DELAY_MS = 1000;
+
+function isRetryableError(err) {
+  const msg = (err?.message || '').toLowerCase();
+  if (/timeout|etimedout|econnreset|econnrefused|network|fetch failed|socket hang up/.test(msg)) return true;
+  if (/429|500|502|503|504|rate.?limit|too many requests|overloaded/.test(msg)) return true;
+  return false;
+}
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function withRetry(fn) {
+  let lastErr;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt < MAX_RETRIES && isRetryableError(err)) {
+        await sleep(BASE_DELAY_MS * Math.pow(2, attempt));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
+
 function getProvider() {
   return getConfigStr('ai_provider') || 'ollama';
 }
@@ -176,10 +207,12 @@ async function chatAnthropic(messages) {
  * @returns {Promise<string>}
  */
 export async function chat(messages) {
-  const provider = getProvider();
-  if (provider === 'openai') return chatOpenAI(messages);
-  if (provider === 'anthropic') return chatAnthropic(messages);
-  return chatOllama(messages);
+  return withRetry(() => {
+    const provider = getProvider();
+    if (provider === 'openai') return chatOpenAI(messages);
+    if (provider === 'anthropic') return chatAnthropic(messages);
+    return chatOllama(messages);
+  });
 }
 
 /**

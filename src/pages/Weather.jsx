@@ -21,18 +21,22 @@ import {
   EnvironmentOutlined,
   CloudOutlined,
   RobotOutlined,
+  SkinOutlined,
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import useWeatherStore from '../stores/weatherStore';
 import useUserStore from '../stores/userStore';
 import { getLogger } from '../services/logger-client';
+import { useI18n } from '../context/I18nContext';
 import { isApiKeyConfigured } from '../services/weather-api';
+import { getClothingSuggestion } from '../stores/outfitStore';
 
 const { Title, Text } = Typography;
 const logger = getLogger();
 
 function Weather() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [searchValue, setSearchValue] = useState('');
   const [searchOptions, setSearchOptions] = useState([]);
 
@@ -82,7 +86,7 @@ function Weather() {
       );
     } catch (e) {
       logger.error('Weather', '搜索失败', e);
-      message.error('搜索城市失败');
+      message.error(t('weather.messages.searchFailed', '搜索城市失败'));
     }
   };
 
@@ -91,10 +95,10 @@ function Weather() {
       await switchCity(option.city);
       setSearchValue('');
       setSearchOptions([]);
-      message.success(`已切换到 ${option.city.displayName}`);
+      message.success(t('weather.messages.citySwitched', '已切换到 {{city}}', { city: option.city.displayName }));
     } catch (e) {
       logger.error('Weather', '切换城市失败', e);
-      message.error('切换城市失败');
+      message.error(t('weather.messages.switchFailed', '切换城市失败'));
     }
   };
 
@@ -102,10 +106,10 @@ function Weather() {
     try {
       await fetchCurrentWeather(null, { skipCache: true });
       await fetchForecast(null, { skipCache: true });
-      message.success('天气信息已更新');
+      message.success(t('weather.messages.refreshed', '天气信息已更新'));
     } catch (e) {
       logger.error('Weather', '刷新失败', e);
-      message.error('刷新失败');
+      message.error(t('weather.messages.refreshFailed', '刷新失败'));
     }
   };
 
@@ -277,6 +281,29 @@ function Weather() {
               </Col>
             </Row>
           </Card>
+
+          {/* Clothing Suggestion */}
+          {(() => {
+            const suggestions = getClothingSuggestion(currentWeather);
+            if (suggestions.length === 0) return null;
+            return (
+              <Card
+                className="weather-forecast-card"
+                title={
+                  <span><SkinOutlined style={{ marginRight: 8 }} />今日穿衣建议</span>
+                }
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {suggestions.map((item, idx) => (
+                    <div key={idx} className="weather-suggestion-item">
+                      <span style={{ fontSize: 22, flexShrink: 0 }}>{item.icon}</span>
+                      <Text style={{ fontSize: 14, lineHeight: 1.6 }}>{item.text}</Text>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            );
+          })()}
 
           {/* Forecast */}
           {forecast.length > 0 && (
