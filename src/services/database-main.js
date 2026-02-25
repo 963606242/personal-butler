@@ -78,6 +78,7 @@ class DatabaseService {
       this.migrateCountdownSchema();
       this.migrateDiarySchema();
       this.migrateEquipmentSchema();
+      this.migrateRssSchema();
 
       this.initialized = true;
       logger.log('Database', '数据库初始化成功:', this.dbPath);
@@ -297,6 +298,48 @@ class DatabaseService {
         updated_at INTEGER
       )
     `);
+
+    // RSS 订阅表
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS rss_feeds (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id),
+        title TEXT,
+        url TEXT NOT NULL,
+        site_url TEXT,
+        description TEXT,
+        icon_url TEXT,
+        category TEXT,
+        refresh_interval INTEGER DEFAULT 30,
+        last_fetch_at INTEGER,
+        last_fetch_status TEXT,
+        unread_count INTEGER DEFAULT 0,
+        sort_order INTEGER DEFAULT 0,
+        created_at INTEGER,
+        updated_at INTEGER
+      )
+    `);
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS rss_articles (
+        id TEXT PRIMARY KEY,
+        feed_id TEXT NOT NULL REFERENCES rss_feeds(id),
+        user_id TEXT NOT NULL REFERENCES users(id),
+        title TEXT,
+        link TEXT,
+        guid TEXT,
+        description TEXT,
+        content TEXT,
+        author TEXT,
+        image_url TEXT,
+        published_at INTEGER,
+        is_read INTEGER DEFAULT 0,
+        is_starred INTEGER DEFAULT 0,
+        created_at INTEGER
+      )
+    `);
+    this.db.exec('CREATE INDEX IF NOT EXISTS idx_rss_articles_feed ON rss_articles(feed_id, published_at DESC)');
+    this.db.exec('CREATE INDEX IF NOT EXISTS idx_rss_articles_user_read ON rss_articles(user_id, is_read, published_at DESC)');
+    this.db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_rss_articles_guid ON rss_articles(feed_id, guid)');
   }
 
   // 通用查询方法
@@ -472,6 +515,24 @@ class DatabaseService {
     }
   }
 
+  migrateRssSchema() {
+    if (!this.db) return;
+    try {
+      const cols = this.db.prepare('PRAGMA table_info(rss_feeds)').all();
+      const colNames = cols.map((c) => c.name);
+      if (!colNames.includes('last_fetch_error')) {
+        this.db.exec('ALTER TABLE rss_feeds ADD COLUMN last_fetch_error TEXT');
+        logger.log('Database:Migration', 'rss_feeds 已添加 last_fetch_error 列');
+      }
+      this.db.exec('CREATE INDEX IF NOT EXISTS idx_rss_articles_feed ON rss_articles(feed_id, published_at DESC)');
+      this.db.exec('CREATE INDEX IF NOT EXISTS idx_rss_articles_user_read ON rss_articles(user_id, is_read, published_at DESC)');
+      this.db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_rss_articles_guid ON rss_articles(feed_id, guid)');
+      logger.log('Database:Migration', 'RSS 表结构迁移完成');
+    } catch (e) {
+      logger.warn('Database:Migration', 'RSS 迁移跳过或失败:', e.message);
+    }
+  }
+
   /**
    * 导出所有同步用表为 JSON 对象（供加密后上传云盘）
    * 表顺序保持依赖关系：users 优先，其余按外键顺序
@@ -491,6 +552,8 @@ class DatabaseService {
       'diary_entries',
       'ai_chat_messages',
       'countdown_events',
+      'rss_feeds',
+      'rss_articles',
       'cache',
     ];
     const out = { version: 1, exportedAt: Date.now(), data: {} };
@@ -514,6 +577,8 @@ class DatabaseService {
     if (!payload || !payload.data || typeof payload.data !== 'object') throw new Error('无效的同步数据');
     const tables = [
       'cache',
+      'rss_articles',
+      'rss_feeds',
       'countdown_events',
       'ai_chat_messages',
       'diary_entries',

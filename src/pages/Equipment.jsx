@@ -33,6 +33,7 @@ import useUserStore from '../stores/userStore';
 import { getLogger } from '../services/logger-client';
 import { useI18n } from '../context/I18nContext';
 import EquipmentFormModal from '../components/Equipment/EquipmentFormModal';
+import LocalImage from '../components/LocalImage';
 
 const { Title, Text } = Typography;
 const { Search } = Input;
@@ -257,19 +258,10 @@ function Equipment() {
                   cover={
                     item.image_path ? (
                       <div className="equipment-card-cover">
-                        <img
-                          src={
-                            item.image_path.startsWith('data:')
-                              ? item.image_path
-                              : item.image_path.startsWith('/') || /^[A-Z]:/.test(item.image_path)
-                              ? `file:///${item.image_path.replace(/\\/g, '/')}`
-                              : item.image_path
-                          }
+                        <LocalImage
+                          src={item.image_path}
                           alt={item.name}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.parentElement.innerHTML = `<div class="equipment-card-icon">${category.icon}</div>`;
-                          }}
+                          fallback={<div className="equipment-card-icon">{category.icon}</div>}
                         />
                       </div>
                     ) : (

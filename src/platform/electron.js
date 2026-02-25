@@ -20,6 +20,7 @@ export const log = (level, message) => api()?.log?.(level, message) ?? Promise.r
 
 export const fetchCalendarData = (url) => api()?.fetchCalendarData?.(url) ?? Promise.resolve({ success: false, error: 'Electron API 不可用' });
 export const fetchUrl = (url) => api()?.fetchUrl?.(url) ?? Promise.resolve({ success: false, errorBody: 'Electron API 不可用' });
+export const fetchUrlText = (url) => api()?.fetchUrlText?.(url) ?? Promise.resolve({ success: false, errorBody: 'Electron API 不可用' });
 export const fetchJsonPost = (opts) => api()?.fetchJsonPost?.(opts) ?? Promise.resolve({ success: false, errorBody: 'Electron API 不可用' });
 
 export const showReminderNotification = (payload) => api()?.showReminderNotification?.(payload) ?? Promise.resolve();
@@ -39,6 +40,7 @@ export const deleteTodo = async () => ({ success: false, error: 'Electron 暂不
 export const upsertCalendarEvent = async () => ({ success: false, error: 'Electron 暂不支持写入系统日历' });
 export const deleteCalendarEvent = async () => ({ success: false, error: 'Electron 暂不支持写入系统日历' });
 export const selectImageFile = () => api()?.selectImageFile?.() ?? Promise.resolve(null);
+export const readImageFile = (filePath) => api()?.readImageFile?.(filePath) ?? Promise.resolve(null);
 export const selectMediaFile = (opts) => api()?.selectMediaFile?.(opts) ?? Promise.resolve(null);
 
 // Electron 渲染进程内用 Web Audio API（MediaRecorder）录音，与 Web 一致

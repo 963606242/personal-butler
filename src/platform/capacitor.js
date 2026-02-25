@@ -30,6 +30,8 @@ export const fetchCalendarData = (url) =>
   fetch(url).then((res) => (res.ok ? res.json().then((data) => ({ success: true, data })) : Promise.resolve({ success: false, error: res.statusText })));
 export const fetchUrl = (url) =>
   fetch(url).then((res) => (res.ok ? res.json().then((data) => ({ success: true, data })) : res.text().then((errorBody) => ({ success: false, status: res.status, errorBody }))));
+export const fetchUrlText = (url) =>
+  fetch(url).then((res) => (res.ok ? res.text().then((data) => ({ success: true, data })) : res.text().then((errorBody) => ({ success: false, status: res.status, errorBody }))));
 export const fetchJsonPost = (opts) =>
   fetch(opts.url, {
     method: 'POST',
@@ -100,6 +102,7 @@ export const upsertCalendarEvent = () => notSupported('upsertCalendarEvent'); //
 export const deleteCalendarEvent = () => notSupported('deleteCalendarEvent');
 
 export const selectImageFile = () => Promise.resolve(null); // iOS 建议用相册/相机插件，后续再接
+export const readImageFile = () => Promise.resolve(null); // Capacitor 图片通常为 blob/capacitor 路径
 export const selectMediaFile = async (opts) => {
   const plugins = getPlugins();
   // 可用 @capacitor/camera 或 @capacitor/filesystem + 文件选择器

@@ -19,6 +19,8 @@ export const fetchCalendarData = (url) =>
   fetch(url).then((res) => (res.ok ? res.json().then((data) => ({ success: true, data })) : Promise.resolve({ success: false, error: res.statusText })));
 export const fetchUrl = (url) =>
   fetch(url).then((res) => (res.ok ? res.json().then((data) => ({ success: true, data })) : res.text().then((errorBody) => ({ success: false, status: res.status, errorBody }))));
+export const fetchUrlText = (url) =>
+  fetch(url).then((res) => (res.ok ? res.text().then((data) => ({ success: true, data })) : res.text().then((errorBody) => ({ success: false, status: res.status, errorBody }))));
 export const fetchJsonPost = (opts) =>
   fetch(opts.url, {
     method: 'POST',
@@ -51,6 +53,7 @@ export const deleteTodo = () => notSupported('deleteTodo');
 export const upsertCalendarEvent = () => notSupported('upsertCalendarEvent');
 export const deleteCalendarEvent = () => notSupported('deleteCalendarEvent');
 export const selectImageFile = () => Promise.resolve(null); // Web 需用 <input type="file">，由调用方实现
+export const readImageFile = () => Promise.resolve(null); // Web 无法读取本地文件，图片通常为 data URL
 export const selectMediaFile = () => Promise.resolve(null); // Web 需用 <input type="file" accept="image/*,video/*">，由调用方实现
 
 // Web 录音：使用 MediaRecorder API（需浏览器支持）

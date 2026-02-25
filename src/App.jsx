@@ -11,16 +11,34 @@ import Clothing from './pages/Clothing';
 import Outfits from './pages/Outfits';
 import Weather from './pages/Weather';
 import News from './pages/News';
+import RssSubscription from './pages/RssSubscription';
 import AIChat from './pages/AIChat';
 import Countdown from './pages/Countdown';
 import Diary from './pages/Diary';
 import Settings from './pages/Settings';
 import FunTools from './pages/FunTools';
 import { OnboardingProvider } from './context/OnboardingContext';
+import { useI18n } from './context/I18nContext';
 import { getLogger } from './services/logger-client';
 
 const logger = getLogger();
 const { Content } = Layout;
+
+function ErrorBoundaryFallback({ error }) {
+  const { t } = useI18n();
+  return (
+    <Result
+      status="error"
+      title={t('common.errorBoundaryTitle', '应用出现错误')}
+      subTitle={error?.message || t('common.errorBoundaryUnknown', '未知错误')}
+      extra={
+        <Button type="primary" onClick={() => window.location.reload()}>
+          {t('common.errorBoundaryReload', '刷新页面')}
+        </Button>
+      }
+    />
+  );
+}
 
 // 错误边界组件
 class ErrorBoundary extends React.Component {
@@ -39,18 +57,7 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      return (
-        <Result
-          status="error"
-          title="应用出现错误"
-          subTitle={this.state.error?.message || '未知错误'}
-          extra={
-            <Button type="primary" onClick={() => window.location.reload()}>
-              刷新页面
-            </Button>
-          }
-        />
-      );
+      return <ErrorBoundaryFallback error={this.state.error} />;
     }
 
     return this.props.children;
@@ -60,7 +67,7 @@ class ErrorBoundary extends React.Component {
 function App() {
   return (
     <ErrorBoundary>
-      <Router>
+      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <OnboardingProvider>
           <AntApp>
             <MainLayout>
@@ -74,6 +81,7 @@ function App() {
             <Route path="/outfits" element={<Outfits />} />
             <Route path="/weather" element={<Weather />} />
             <Route path="/news" element={<News />} />
+            <Route path="/rss" element={<RssSubscription />} />
             <Route path="/ai" element={<AIChat />} />
             <Route path="/countdown" element={<Countdown />} />
             <Route path="/diary" element={<Diary />} />

@@ -4,7 +4,10 @@
     "appNameFull": "个人管家",
     "loadingInitializing": "正在初始化...",
     "loadingData": "正在加载数据...",
-    "cancel": "取消"
+    "cancel": "取消",
+    "errorBoundaryTitle": "应用出现错误",
+    "errorBoundaryUnknown": "未知错误",
+    "errorBoundaryReload": "刷新页面"
   },
   "layout": {
     "header": {
@@ -34,10 +37,77 @@
         "clothing": "服装管理",
         "weather": "天气与搭配",
         "news": "新闻资讯",
+        "rss": "RSS订阅",
         "ai": "AI助手",
         "fun": "趣味工具",
         "settings": "设置"
       }
+    }
+  },
+  "rss": {
+    "title": "RSS 订阅",
+    "addFeed": "添加订阅",
+    "refreshAll": "刷新全部",
+    "importOPML": "导入 OPML",
+    "exportOPML": "导出 OPML",
+    "noFeeds": "暂无 RSS 订阅",
+    "addPresets": "一键添加推荐源",
+    "presetTitle": "推荐订阅源",
+    "presetHint": "或从预设中选择：",
+    "allArticles": "全部文章",
+    "noArticles": "暂无文章",
+    "corsWarning": "Web 模式下部分 RSS 源可能无法访问",
+    "categories": {
+      "tech": "科技",
+      "news": "资讯",
+      "blog": "博客",
+      "design": "设计",
+      "other": "其他"
+    },
+    "feed": {
+      "title": "标题",
+      "titlePlaceholder": "自动填充或手动输入",
+      "category": "分类",
+      "refreshInterval": "刷新间隔(分钟)",
+      "urlRequired": "请输入 RSS Feed URL",
+      "urlInvalid": "请输入有效的 URL（需以 http:// 或 https:// 开头）",
+      "validate": "验证",
+      "refresh": "刷新",
+      "retry": "重试",
+      "back": "返回",
+      "fetchError": "抓取失败",
+      "lastFetch": "更新于"
+    },
+    "article": {
+      "filterAll": "全部",
+      "filterUnread": "未读",
+      "filterStarred": "收藏",
+      "markAllRead": "全部已读",
+      "star": "收藏",
+      "unstar": "取消收藏",
+      "openLink": "打开链接",
+      "noContent": "暂无正文",
+      "loadMore": "加载更多"
+    },
+    "messages": {
+      "addSuccess": "订阅添加成功",
+      "addFailed": "订阅添加失败",
+      "deleteSuccess": "删除成功",
+      "deleteFailed": "删除失败",
+      "deleteConfirm": "确定删除此订阅源？",
+      "refreshSuccess": "刷新成功",
+      "refreshFailed": "刷新失败",
+      "refreshAllDone": "刷新完成: {{success}} 成功, {{failed}} 失败",
+      "markAllReadSuccess": "已全部标记为已读",
+      "importSuccess": "导入完成：{{imported}} 个新增",
+      "importResultDetail": "导入完成：{{imported}} 个新增，{{skipped}} 个已存在",
+      "importSkipped": "个跳过",
+      "importFailed": "导入失败",
+      "exportSuccess": "导出成功",
+      "exportFailed": "导出失败",
+      "validateFailed": "无法解析此 Feed URL",
+      "presetAdded": "已添加",
+      "presetSources": "个预设源"
     }
   },
   "diary": {

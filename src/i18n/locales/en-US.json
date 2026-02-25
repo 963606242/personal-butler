@@ -4,7 +4,10 @@
     "appNameFull": "Personal Butler",
     "loadingInitializing": "Initializing...",
     "loadingData": "Loading data...",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "errorBoundaryTitle": "Something went wrong",
+    "errorBoundaryUnknown": "Unknown error",
+    "errorBoundaryReload": "Reload page"
   },
   "layout": {
     "header": {
@@ -34,10 +37,77 @@
         "clothing": "Clothing",
         "weather": "Weather & Outfit",
         "news": "News",
+        "rss": "RSS Subscription",
         "ai": "AI Assistant",
         "fun": "Fun tools",
         "settings": "Settings"
       }
+    }
+  },
+  "rss": {
+    "title": "RSS Subscription",
+    "addFeed": "Add Feed",
+    "refreshAll": "Refresh All",
+    "importOPML": "Import OPML",
+    "exportOPML": "Export OPML",
+    "noFeeds": "No RSS feeds yet",
+    "addPresets": "Add recommended sources",
+    "presetTitle": "Recommended feeds",
+    "presetHint": "Or select from presets:",
+    "allArticles": "All Articles",
+    "noArticles": "No articles",
+    "corsWarning": "Some RSS feeds may be inaccessible in Web mode",
+    "categories": {
+      "tech": "Tech",
+      "news": "News",
+      "blog": "Blog",
+      "design": "Design",
+      "other": "Other"
+    },
+    "feed": {
+      "title": "Title",
+      "titlePlaceholder": "Auto-filled or enter manually",
+      "category": "Category",
+      "refreshInterval": "Refresh interval (minutes)",
+      "urlRequired": "Please enter RSS Feed URL",
+      "urlInvalid": "Please enter a valid URL (must start with http:// or https://)",
+      "validate": "Validate",
+      "refresh": "Refresh",
+      "retry": "Retry",
+      "back": "Back",
+      "fetchError": "Fetch failed",
+      "lastFetch": "Updated"
+    },
+    "article": {
+      "filterAll": "All",
+      "filterUnread": "Unread",
+      "filterStarred": "Starred",
+      "markAllRead": "Mark All Read",
+      "star": "Star",
+      "unstar": "Unstar",
+      "openLink": "Open link",
+      "noContent": "No content",
+      "loadMore": "Load more"
+    },
+    "messages": {
+      "addSuccess": "Feed added successfully",
+      "addFailed": "Failed to add feed",
+      "deleteSuccess": "Deleted successfully",
+      "deleteFailed": "Delete failed",
+      "deleteConfirm": "Are you sure you want to delete this feed?",
+      "refreshSuccess": "Refreshed successfully",
+      "refreshFailed": "Refresh failed",
+      "refreshAllDone": "Refresh complete: {{success}} success, {{failed}} failed",
+      "markAllReadSuccess": "All marked as read",
+      "importSuccess": "Import complete: {{imported}} feeds added",
+      "importResultDetail": "Import complete: {{imported}} added, {{skipped}} already existed",
+      "importSkipped": "skipped",
+      "importFailed": "Import failed",
+      "exportSuccess": "Export successful",
+      "exportFailed": "Export failed",
+      "validateFailed": "Unable to parse this Feed URL",
+      "presetAdded": "Added",
+      "presetSources": "preset sources"
     }
   },
   "diary": {

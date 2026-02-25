@@ -187,7 +187,7 @@ function OnboardingModal({ open, onClose, markDone = true }) {
       onCancel={handleClose}
       footer={null}
       width={560}
-      destroyOnClose
+      destroyOnHidden
       maskClosable={false}
     >
       <Steps current={current} size="small" style={{ marginBottom: 24 }}>

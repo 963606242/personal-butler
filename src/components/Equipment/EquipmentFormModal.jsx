@@ -7,7 +7,7 @@ import { Modal, Form, Input, Select, DatePicker, InputNumber, Button, Row, Col, 
 import { UploadOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { EQUIPMENT_CATEGORIES, EQUIPMENT_STATUS } from '../../stores/equipmentStore';
-import { selectImageFile } from '../../platform';
+import { selectImageFile, readImageFile, isElectron } from '../../platform';
 
 const { TextArea } = Input;
 
@@ -20,11 +20,11 @@ function EquipmentFormModal({ open, editing, onCancel, onOk, form }) {
       if (editing && editing.image_path) {
         const imgPath = editing.image_path;
         setImagePath(imgPath);
-        // 处理 Electron 本地文件路径
         if (imgPath.startsWith('data:')) {
           setImagePreview(imgPath);
+        } else if (isElectron() && (imgPath.startsWith('/') || /^[A-Za-z]:/.test(imgPath))) {
+          readImageFile(imgPath).then((dataUrl) => setImagePreview(dataUrl || null));
         } else if (imgPath.startsWith('/') || /^[A-Z]:/.test(imgPath)) {
-          // Windows 绝对路径，转换为 file:// URL
           setImagePreview(`file:///${imgPath.replace(/\\/g, '/')}`);
         } else {
           setImagePreview(imgPath);

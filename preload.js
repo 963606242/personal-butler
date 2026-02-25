@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showReminderNotification: (payload) => ipcRenderer.invoke('show-reminder-notification', payload),
   // 图片文件选择
   selectImageFile: () => ipcRenderer.invoke('select-image-file'),
+  // 读取本地图片为 base64（webSecurity 开启时替代 file://）
+  readImageFile: (filePath) => ipcRenderer.invoke('read-image-file', filePath),
   // 媒体文件选择（图片/视频）
   selectMediaFile: (opts) => ipcRenderer.invoke('select-media-file', opts),
   // 录音
@@ -25,8 +27,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cancelAudioRecording: () => ipcRenderer.invoke('cancel-audio-recording'),
   // 录音转写（OpenAI Whisper），参数 { base64, apiKey }
   transcribeAudio: (opts) => ipcRenderer.invoke('transcribe-audio', opts),
-  // 主进程 GET 请求（绕过代理，用于新闻 API）
+  // 主进程 GET 请求（绕过代理，用于新闻 API，返回 JSON）
   fetchUrl: (url) => ipcRenderer.invoke('fetch-url', url),
+  // 主进程 GET 请求返回原始文本（用于 RSS/XML）
+  fetchUrlText: (url) => ipcRenderer.invoke('fetch-url-text', url),
   // 主进程 POST JSON（绕过代理，用于 AI API）
   fetchJsonPost: (opts) => ipcRenderer.invoke('fetch-json-post', opts),
   // 「可被 AI 调用」本地 API：保存设置后重启服务

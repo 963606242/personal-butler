@@ -28,8 +28,20 @@ function migrateExistingDb() {
         db.run('ALTER TABLE equipment ADD COLUMN last_maintained INTEGER');
       }
     }
+    try {
+      const rssCols = db.exec('PRAGMA table_info(rss_feeds)');
+      if (rssCols?.length > 0 && rssCols[0]?.values) {
+        const rssNames = rssCols[0].values.map((r) => r[1]);
+        if (!rssNames.includes('last_fetch_error')) {
+          db.run('ALTER TABLE rss_feeds ADD COLUMN last_fetch_error TEXT');
+          logger.log('DB-Web', 'rss_feeds 已添加 last_fetch_error 列');
+        }
+      }
+    } catch (rssErr) {
+      logger.warn('DB-Web', 'rss_feeds migration skipped:', rssErr?.message);
+    }
   } catch (e) {
-    logger.warn('DB-Web', 'equipment migration skipped:', e?.message);
+    logger.warn('DB-Web', 'migration skipped:', e?.message);
   }
 }
 
@@ -184,6 +196,8 @@ export function exportForSync() {
     'diary_entries',
     'ai_chat_messages',
     'countdown_events',
+    'rss_feeds',
+    'rss_articles',
     'cache',
   ];
   const out = { version: 1, exportedAt: Date.now(), data: {} };
@@ -207,6 +221,8 @@ export async function importFromSync(payload) {
   if (!payload?.data || typeof payload.data !== 'object') throw new Error('无效的同步数据');
   const tables = [
     'cache',
+    'rss_articles',
+    'rss_feeds',
     'countdown_events',
     'ai_chat_messages',
     'diary_entries',

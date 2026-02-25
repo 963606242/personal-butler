@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, Notification, dialog, protocol, safeStorage } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, Notification, dialog, protocol, safeStorage, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
@@ -12,6 +12,9 @@ const isDev = process.env.NODE_ENV === 'development' ||
 let mainWindow;
 
 function createWindow() {
+  // 开发模式加载 localhost 时有正常 origin，可启用 webSecurity；生产模式 loadFile 时需关闭以支持跨域请求（如 RSS）
+  const needsWebSecurityOff = !isDev;
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -19,7 +22,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      webSecurity: false, // 允许加载本地文件（仅开发环境，生产环境应使用自定义协议）
+      webSecurity: !needsWebSecurityOff,
+      allowRunningInsecureContent: false,
     },
     icon: path.join(__dirname, 'build/icon.png'),
   });
@@ -89,6 +93,20 @@ app.whenReady().then(async () => {
 
   // 隐藏顶部默认菜单栏（File / Edit / View / Window 等）
   Menu.setApplicationMenu(null);
+
+  // 生产环境：设置 Content-Security-Policy 降低安全风险（开发模式 Vite 需 unsafe-eval，不设置）
+  if (!isDev) {
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': [
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http:; connect-src 'self' https: http:; font-src 'self' data:",
+          ],
+        },
+      });
+    });
+  }
 
   // 然后创建窗口
   createWindow();
@@ -372,7 +390,7 @@ ipcMain.handle('fetch-calendar-data', async (event, url) => {
   });
 });
 
-// 通用 GET 请求（主进程 Node https，绕过系统/代理，用于新闻等 API）
+// 通用 GET 请求（主进程 Node https，绕过系统/代理，用于新闻等 API，返回 JSON）
 ipcMain.handle('fetch-url', async (event, url) => {
   return new Promise((resolve, reject) => {
     try {
@@ -411,19 +429,72 @@ ipcMain.handle('fetch-url', async (event, url) => {
       });
 
       req.on('error', (err) => {
-        const errMsg = err.code === 'ETIMEDOUT' || err.code === 'ECONNRESET' 
+        const errMsg = err.code === 'ETIMEDOUT' || err.code === 'ECONNRESET'
           ? `网络连接失败 (${err.code}): ${err.message}。请检查网络连接或稍后重试。`
           : `请求错误: ${err.message}`;
         console.error('[IPC] fetch-url 请求错误:', urlObj.hostname, errMsg);
         reject(new Error(errMsg));
       });
-      
-      // 请求超时（包括连接和响应）
+
       req.setTimeout(20000, () => {
         req.destroy();
         reject(new Error('请求超时（20秒）'));
       });
-      
+
+      req.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+});
+
+// GET 请求返回原始文本（用于 RSS/XML 等非 JSON 内容）
+ipcMain.handle('fetch-url-text', async (event, url) => {
+  return new Promise((resolve, reject) => {
+    try {
+      const urlObj = new URL(url);
+      const client = urlObj.protocol === 'https:' ? https : http;
+      const options = {
+        hostname: urlObj.hostname,
+        port: urlObj.port || (urlObj.protocol === 'https:' ? 443 : 80),
+        path: urlObj.pathname + urlObj.search,
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Personal-Butler/1.0 (Electron)',
+          'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml, */*',
+        },
+        timeout: 20000,
+      };
+
+      const req = client.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ success: true, data });
+          } else {
+            resolve({
+              success: false,
+              status: res.statusCode,
+              errorBody: data.slice(0, 500),
+            });
+          }
+        });
+      });
+
+      req.on('error', (err) => {
+        const errMsg = err.code === 'ETIMEDOUT' || err.code === 'ECONNRESET'
+          ? `网络连接失败 (${err.code}): ${err.message}`
+          : `请求错误: ${err.message}`;
+        console.error('[IPC] fetch-url-text 请求错误:', urlObj.hostname, errMsg);
+        reject(new Error(errMsg));
+      });
+
+      req.setTimeout(20000, () => {
+        req.destroy();
+        reject(new Error('请求超时（20秒）'));
+      });
+
       req.end();
     } catch (err) {
       reject(err);
@@ -479,6 +550,23 @@ ipcMain.handle('fetch-json-post', async (event, { url, body, headers = {} }) => 
       reject(err);
     }
   });
+});
+
+// 读取本地图片为 base64 data URL（用于 webSecurity 开启时无法直接加载 file://）
+ipcMain.handle('read-image-file', async (event, filePath) => {
+  try {
+    if (!filePath || typeof filePath !== 'string') return null;
+    const p = filePath.replace(/^file:\/\//, '').replace(/^\/([A-Za-z]:)/, '$1');
+    const normalized = path.resolve(p);
+    if (!fs.existsSync(normalized)) return null;
+    const ext = path.extname(normalized).toLowerCase();
+    const mime = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp', '.bmp': 'image/bmp' }[ext] || 'image/jpeg';
+    const buf = fs.readFileSync(normalized);
+    return `data:${mime};base64,${buf.toString('base64')}`;
+  } catch (e) {
+    console.error('[IPC] read-image-file 失败:', e?.message);
+    return null;
+  }
 });
 
 // 图片文件选择

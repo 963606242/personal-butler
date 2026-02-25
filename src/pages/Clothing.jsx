@@ -37,6 +37,7 @@ import useUserStore from '../stores/userStore';
 import { getLogger } from '../services/logger-client';
 import { useI18n } from '../context/I18nContext';
 import ClothingFormModal from '../components/Clothing/ClothingFormModal';
+import LocalImage from '../components/LocalImage';
 import FriendlyEmpty from '../components/FriendlyEmpty';
 import { useNavigate } from 'react-router-dom';
 
@@ -151,15 +152,6 @@ function Clothing() {
     );
   };
 
-  const formatImageSrc = (imagePath) => {
-    if (!imagePath) return null;
-    if (imagePath.startsWith('data:') || imagePath.startsWith('http')) {
-      return imagePath;
-    }
-    // Electron 环境：处理 file:// 路径
-    const path = imagePath.replace(/\\/g, '/');
-    return path.startsWith('file://') ? path : `file:///${path}`;
-  };
 
   if (!isInitialized || loading) {
     return (
@@ -189,13 +181,10 @@ function Clothing() {
                     cover={
                       item.image_path ? (
                         <div className="clothing-card-cover">
-                          <img
-                            src={formatImageSrc(item.image_path)}
+                          <LocalImage
+                            src={item.image_path}
                             alt={item.name}
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.parentElement.innerHTML = `<span class="clothing-card-icon">${getCategoryIcon(item.category)}</span>`;
-                            }}
+                            fallback={<span className="clothing-card-icon">{getCategoryIcon(item.category)}</span>}
                           />
                         </div>
                       ) : (
@@ -283,13 +272,10 @@ function Clothing() {
                         cover={
                           item.image_path ? (
                             <div className="clothing-mini-cover" style={{ position: 'relative' }}>
-                              <img
-                                src={formatImageSrc(item.image_path)}
+                              <LocalImage
+                                src={item.image_path}
                                 alt={item.name}
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  e.target.parentElement.innerHTML = `<span class="clothing-mini-icon">${getCategoryIcon(item.category)}</span>`;
-                                }}
+                                fallback={<span className="clothing-mini-icon">{getCategoryIcon(item.category)}</span>}
                               />
                               {item.wash_status === 'dirty' && <div className="clothing-dirty-indicator" />}
                             </div>

@@ -9,7 +9,7 @@ import {
   CLOTHING_STYLES,
   WASH_STATUS,
 } from '../../stores/clothingStore';
-import { selectImageFile } from '../../platform';
+import { selectImageFile, readImageFile, isElectron } from '../../platform';
 import { getLogger } from '../../services/logger-client';
 
 const logger = getLogger();
@@ -33,7 +33,14 @@ function ClothingFormModal({ visible, form, onOk, onCancel, editingClothing }) {
           wash_status: editingClothing.wash_status || 'clean',
         });
         if (editingClothing.image_path) {
-          setImagePreview(editingClothing.image_path);
+          const imgPath = editingClothing.image_path;
+          if (imgPath.startsWith('data:') || imgPath.startsWith('http')) {
+            setImagePreview(imgPath);
+          } else if (isElectron() && (imgPath.startsWith('/') || /^[A-Za-z]:/.test(imgPath))) {
+            readImageFile(imgPath).then((dataUrl) => setImagePreview(dataUrl || null));
+          } else {
+            setImagePreview(imgPath.startsWith('file://') ? imgPath : `file:///${imgPath.replace(/\\/g, '/')}`);
+          }
         } else {
           setImagePreview(null);
         }
@@ -49,10 +56,13 @@ function ClothingFormModal({ visible, form, onOk, onCancel, editingClothing }) {
       const result = await selectImageFile();
       const filePath = result && (typeof result === 'string' ? result : result.filePath);
       if (filePath) {
-        const imagePath = filePath.replace(/\\/g, '/');
-        const imageUrl = imagePath.startsWith('file://') ? imagePath : `file:///${imagePath}`;
         form.setFieldsValue({ image_path: filePath });
-        setImagePreview(imageUrl);
+        if (isElectron() && (filePath.startsWith('/') || /^[A-Za-z]:/.test(filePath))) {
+          readImageFile(filePath).then((dataUrl) => setImagePreview(dataUrl || null));
+        } else {
+          const imagePath = filePath.replace(/\\/g, '/');
+          setImagePreview(imagePath.startsWith('file://') ? imagePath : `file:///${imagePath}`);
+        }
       } else if (result && !result.canceled) {
         message.error('选择图片失败');
       } else {

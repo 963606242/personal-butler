@@ -30,6 +30,7 @@ export const log = platform.log;
 
 export const fetchCalendarData = platform.fetchCalendarData;
 export const fetchUrl = platform.fetchUrl;
+export const fetchUrlText = platform.fetchUrlText;
 export const fetchJsonPost = platform.fetchJsonPost;
 
 export const showReminderNotification = platform.showReminderNotification;
@@ -41,6 +42,7 @@ export const deleteTodo = platform.deleteTodo;
 export const upsertCalendarEvent = platform.upsertCalendarEvent;
 export const deleteCalendarEvent = platform.deleteCalendarEvent;
 export const selectImageFile = platform.selectImageFile;
+export const readImageFile = platform.readImageFile;
 export const selectMediaFile = platform.selectMediaFile;
 export const startAudioRecording = platform.startAudioRecording;
 export const stopAudioRecording = platform.stopAudioRecording;

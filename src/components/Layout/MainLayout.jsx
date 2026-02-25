@@ -20,6 +20,7 @@ import {
   AppstoreOutlined,
   RightOutlined,
   BookOutlined,
+  WifiOutlined,
 } from '@ant-design/icons';
 import useUserStore from '../../stores/userStore';
 import useScheduleStore from '../../stores/scheduleStore';
@@ -229,6 +230,7 @@ function MainLayout({ children }) {
       label: t('layout.sidebar.groups.newsAssistant', '资讯与助手'),
       children: [
         { key: '/news', icon: <FileTextOutlined />, label: t('layout.sidebar.menu.news', '新闻资讯') },
+        { key: '/rss', icon: <WifiOutlined />, label: t('layout.sidebar.menu.rss', 'RSS订阅') },
         { key: '/ai', icon: <RobotOutlined />, label: t('layout.sidebar.menu.ai', 'AI助手') },
       ],
     },
@@ -266,6 +268,7 @@ function MainLayout({ children }) {
     { path: '/clothing', icon: SkinOutlined, label: t('layout.sidebar.menu.clothing', '服装管理') },
     { path: '/weather', icon: CloudOutlined, label: t('layout.sidebar.menu.weather', '天气与搭配') },
     { path: '/news', icon: FileTextOutlined, label: t('layout.sidebar.menu.news', '新闻资讯') },
+    { path: '/rss', icon: WifiOutlined, label: t('layout.sidebar.menu.rss', 'RSS订阅') },
     { path: '/fun', icon: ExperimentOutlined, label: t('layout.sidebar.menu.fun', '趣味工具') },
     { path: '/settings', icon: SettingOutlined, label: t('layout.sidebar.menu.settings', '设置') },
   ];
